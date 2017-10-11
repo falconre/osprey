@@ -1,0 +1,14 @@
+[package]
+name = "osprey"
+version = "0.1.0"
+authors = [ "Alex Eubanks <endeavor@rainbowsandpwnies.com>" ]
+
+[dependencies]
+clap = "2.26"
+falcon = { git = "https://github.com/falconre/falcon", branch="master", features=["thread_safe"] }
+gluon = "0.6.0"
+gluon_vm = "0.6.0"
+
+[[bin]]
+name = "osprey"
+path = "src/main.rs"
