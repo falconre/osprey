@@ -1,0 +1,49 @@
+// This script takes the path to a binary, and the name of a function, and
+// prints out a graphviz dot graph of that function in Falcon IL.
+
+
+// Arguments to our script
+let filename = "path_to_binary"
+let function_name = "main"
+
+
+// Some standard boilerplate stuff for gluon
+let io = import! "std/io.glu"
+let option = import! "std/types.glu"
+let { Option } = option
+
+let string = import! "std/string.glu"
+let { (==) } = string.eq
+let (++) = string_prim.append
+
+
+// Load the elf
+let elf = elf_from_file filename
+
+
+// Calls loader::Loader::function_entries() and walks the resulting entries until
+// an entry with desired name is found, and returns that
+let find_function elf function_name =
+    let find functions i name =
+        if i == (array.len functions) then
+            None
+        else
+            let function_entry = array.index functions i
+            if (function_entry_name function_entry) == name then
+                Some function_entry
+            else
+                find functions (i + 1) name
+    find (elf_function_entries elf) 0 function_name
+
+
+// If we found our target function, return the dot graph of the CFG.
+let output =
+    match find_function elf function_name with
+    | None -> "Could not find " ++ function_name
+    | Some function_entry -> 
+        let address = function_entry_address function_entry
+        let function = elf_function elf address
+        let cfg = function_control_flow_graph function
+        control_flow_graph_dot_graph cfg
+
+io.println output

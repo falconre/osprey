@@ -167,6 +167,10 @@ fn elf_memory(elf: &LoaderElf) -> LoaderMemory {
     LoaderMemory { x: elf.x.memory().unwrap() }
 }
 
+fn elf_function(elf: &LoaderElf, address: u64) -> IlFunction {
+    IlFunction { x: elf.x.function(address).unwrap() }
+}
+
 falcon_type_wrapper!(falcon::loader::FunctionEntry, LoaderFunctionEntry);
 
 fn function_entry_name(function_entry: &LoaderFunctionEntry) -> String {
@@ -233,6 +237,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.define_global("elf_base_address", primitive!(1 elf_base_address)).unwrap();
     vm.define_global("elf_from_file", primitive!(1 elf_from_file)).unwrap();
     vm.define_global("elf_function_entries", primitive!(1 elf_function_entries)).unwrap();
+    vm.define_global("elf_function", primitive!(2 elf_function)).unwrap();
     vm.define_global("elf_memory", primitive!(1 elf_memory)).unwrap();
     vm.define_global("expression_scalar", primitive!(1 expression_scalar)).unwrap();
     vm.define_global("expression_constant", primitive!(1 expression_constant)).unwrap();
