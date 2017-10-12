@@ -3,6 +3,9 @@ let io = import! "std/io.glu"
 let prelude = import! "std/prelude.glu"
 let { (|>) } = prelude
 
+let types = import! "std/types.glu"
+let { Option } = types
+
 let test = import! "std/test.glu"
 let { assert } = test
 
@@ -107,14 +110,42 @@ let operation_match operation =
         Phi 0 0
 
 
+let edge_condition edge =
+    if falcon_prim.edge_has_condition edge then
+        Some (falcon_prim.edge_condition edge)
+    else
+        None
+
+
 {
+    block_index = falcon_prim.block_index,
+    block_instructinos = falcon_prim.block_instructions,
+    block_assign = falcon_prim.block_assign,
+    block_store = falcon_prim.block_store,
+    block_load = falcon_prim.block_load,
+    block_brc = falcon_prim.block_brc,
+    block_raise = falcon_prim.block_raise,
+    block_str = falcon_prim.block_str,
+
+    control_flow_graph_blocks = falcon_prim.control_flow_graph_blocks,
+    control_flow_graph_dot_graph = falcon_prim.control_flow_graph_dot_graph,
+    control_flow_graph_str = falcon_prim.control_flow_graph_str,
+
     constant_new = falcon_prim.constant_new,
     constant_value = falcon_prim.constant_value,
     constant_bits = falcon_prim.constant_bits,
+    constant_str = falcon_prim.control_flow_graph_str,
 
-    scalar_new = falcon_prim.scalar_new,
-    scalar_name = falcon_prim.scalar_name,
-    scalar_bits = falcon_prim.scalar_bits,
+    edge_condition = edge_condition,
+    edge_head = falcon_prim.edge_head,
+    edge_tail = falcon_prim.edge_tail,
+    edge_str = falcon_prim.edge_str,
+
+    elf_base_address = falcon_prim.elf_base_address,
+    elf_from_file = falcon_prim.elf_from_file,
+    elf_function_entries = falcon_prim.elf_function_entries,
+    elf_function = falcon_prim.elf_function,
+    elf_memory = falcon_prim.elf_memory,
 
     expression_scalar = falcon_prim.expression_scalar,
     expression_constant = falcon_prim.expression_constant,
@@ -139,6 +170,15 @@ let operation_match operation =
     expression_trun = falcon_prim.expression_trun,
     expression_match = expression_match,
 
+    function_control_flow_graph = falcon_prim.function_control_flow_graph,
+
+    function_entry_name = falcon_prim.function_entry_name,
+    function_entry_address = falcon_prim.function_entry_address,
+    function_entry_str = falcon_prim.function_entry_str,
+
+    instruction_index = falcon_prim.instruction_index,
+    instruction_operation = falcon_prim.instruction_operation,
+
     operation_assign = falcon_prim.operation_assign,
     operation_store = falcon_prim.operation_store,
     operation_load = falcon_prim.operation_load,
@@ -146,17 +186,7 @@ let operation_match operation =
     operation_raise = falcon_prim.operation_raise,
     operation_match = operation_match,
 
-    control_flow_graph_blocks = falcon_prim.control_flow_graph_blocks,
-    control_flow_graph_dot_graph = falcon_prim.control_flow_graph_dot_graph,
-
-    function_control_flow_graph = falcon_prim.function_control_flow_graph,
-
-    elf_base_address = falcon_prim.elf_base_address,
-    elf_from_file = falcon_prim.elf_from_file,
-    elf_function_entries = falcon_prim.elf_function_entries,
-    elf_function = falcon_prim.elf_function,
-    elf_memory = falcon_prim.elf_memory,
-
-    function_entry_name = falcon_prim.function_entry_name,
-    function_entry_address = falcon_prim.function_entry_address
+    scalar_new = falcon_prim.scalar_new,
+    scalar_name = falcon_prim.scalar_name,
+    scalar_bits = falcon_prim.scalar_bits,
 }

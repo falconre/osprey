@@ -31,6 +31,10 @@ fn constant_bits(constant: &IlConstant) -> usize {
     constant.x.bits()
 }
 
+fn constant_str(constant: &IlConstant) -> String {
+    format!("{}", constant.x)
+}
+
 
 falcon_type_wrapper!(falcon::il::Scalar, IlScalar);
 
@@ -46,6 +50,10 @@ fn scalar_bits(scalar: &IlScalar) -> usize {
     scalar.x.bits()
 }
 
+fn scalar_str(scalar: &IlScalar) -> String {
+    format!("{}", scalar.x)
+}
+
 
 falcon_type_wrapper!(falcon::il::Array, IlArray);
 
@@ -59,6 +67,10 @@ fn array_name(array: &IlArray) -> &str {
 
 fn array_size(array: &IlArray) -> u64 {
     array.x.size()
+}
+
+fn array_str(array: &IlArray) -> String {
+    format!("{}", array.x)
 }
 
 
@@ -218,6 +230,10 @@ fn expression_get_bits(expr: &IlExpression) -> usize {
     }
 }
 
+fn expression_str(expr: &IlExpression) -> String {
+    format!("{}", expr.x)
+}
+
 
 falcon_type_wrapper!(falcon::il::Operation, IlOperation);
 
@@ -329,9 +345,101 @@ fn operation_raise_expr(operation: &IlOperation) -> IlExpression {
     }
 }
 
+fn operation_str(operation: &IlOperation) -> String {
+    format!("{}", operation.x)
+}
+
 
 falcon_type_wrapper!(falcon::il::Instruction, IlInstruction);
+
+fn instruction_operation(instruction: &IlInstruction) -> IlOperation {
+    IlOperation { x: instruction.x.operation().clone() }
+}
+
+fn instruction_index(instruction: &IlInstruction) -> u64 {
+    instruction.x.index()
+}
+
+fn instruction_str(instruction: &IlInstruction) -> String {
+    format!("{}", instruction.x)
+}
+
+
 falcon_type_wrapper!(falcon::il::Block, IlBlock);
+
+fn block_index(block: &IlBlock) -> u64 {
+    block.x.index()
+}
+
+fn block_instructions(block: &IlBlock) -> Vec<IlInstruction> {
+    block.x
+         .instructions()
+         .iter()
+         .map(|i| IlInstruction {x: i.clone()})
+         .collect::<Vec<IlInstruction>>()
+}
+
+fn block_assign(block: &IlBlock, dst: &IlScalar, src: &IlExpression) -> IlBlock {
+    let mut block = block.clone();
+    block.x.assign(dst.x.clone(), src.x.clone());
+    block
+}
+
+fn block_store(block: &IlBlock, dst: &IlArray, index: &IlExpression, src: &IlExpression) -> IlBlock {
+    let mut block = block.clone();
+    block.x.store(dst.x.clone(), index.x.clone(), src.x.clone());
+    block
+}
+
+fn block_load(block: &IlBlock, dst: &IlScalar, index: &IlExpression, src: &IlArray) -> IlBlock {
+    let mut block = block.clone();
+    block.x.load(dst.x.clone(), index.x.clone(), src.x.clone());
+    block
+}
+
+fn block_brc(block: &IlBlock, target: &IlExpression, condition: &IlExpression) -> IlBlock {
+    let mut block = block.clone();
+    block.x.brc(target.x.clone(), condition.x.clone());
+    block
+}
+
+fn block_raise(block: &IlBlock, expr: &IlExpression) -> IlBlock {
+    let mut block = block.clone();
+    block.x.raise(expr.x.clone());
+    block
+}
+
+fn block_str(block: &IlBlock) -> String {
+    format!("{}", block.x)
+}
+
+
+falcon_type_wrapper!(falcon::il::Edge, IlEdge);
+
+fn edge_has_condition(edge: &IlEdge) -> bool {
+    if let Some(_) = *edge.x.condition() {
+        true
+    }
+    else {
+        false
+    }
+}
+
+fn edge_condition(edge: &IlEdge) -> IlExpression {
+    IlExpression { x: edge.x.condition().clone().unwrap() }
+}
+
+fn edge_head(edge: &IlEdge) -> u64 {
+    edge.x.head()
+}
+
+fn edge_tail(edge: &IlEdge) -> u64 {
+    edge.x.tail()
+}
+
+fn edge_str(edge: &IlEdge) -> String {
+    format!("{}", edge.x)
+}
 
 
 falcon_type_wrapper!(falcon::il::ControlFlowGraph, IlControlFlowGraph);
@@ -349,6 +457,11 @@ fn control_flow_graph_blocks(control_flow_graph: &IlControlFlowGraph)
 fn control_flow_graph_dot_graph(control_flow_graph: &IlControlFlowGraph) -> String {
     control_flow_graph.x.graph().dot_graph()
 }
+
+fn control_flow_graph_str(control_flow_graph: &IlControlFlowGraph) -> String {
+    format!("{}", control_flow_graph.x)
+}
+
 
 falcon_type_wrapper!(falcon::il::Function, IlFunction);
 
@@ -409,6 +522,10 @@ fn function_entry_address(function_entry: &LoaderFunctionEntry) -> u64 {
     function_entry.x.address()
 }
 
+fn function_entry_str(function_entry: &LoaderFunctionEntry) -> String {
+    format!("{}", function_entry.x)
+}
+
 falcon_type_wrapper!(falcon::loader::memory::Memory, LoaderMemory);
 
 
@@ -451,6 +568,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlOperation>("IlOperation", &[]).unwrap();
     vm.register_type::<IlInstruction>("IlInstruction", &[]).unwrap();
     vm.register_type::<IlBlock>("IlBlock", &[]).unwrap();
+    vm.register_type::<IlEdge>("IlEdge", &[]).unwrap();
     vm.register_type::<IlControlFlowGraph>("IlControlFlowGraph", &[]).unwrap();
     vm.register_type::<IlFunction>("IlFunction", &[]).unwrap();
     vm.register_type::<IlProgram>("IlProgram", &[]).unwrap();
@@ -463,11 +581,27 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         array_new => primitive!(2 array_new),
         array_name => primitive!(1 array_name),
         array_size => primitive!(1 array_size),
+        array_str => primitive!(1 array_str),
+        block_index => primitive!(1 block_index),
+        block_instructions => primitive!(1 block_instructions),
+        block_assign => primitive!(3 block_assign),
+        block_store => primitive!(4 block_store),
+        block_load => primitive!(4 block_load),
+        block_brc => primitive!(3 block_brc),
+        block_raise => primitive!(2 block_raise),
+        block_str => primitive!(1 block_str),
         constant_new => primitive!(2 constant_new),
         constant_bits => primitive!(1 constant_bits),
         constant_value => primitive!(1 constant_value),
+        constant_str => primitive!(1 constant_str),
         control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
         control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
+        control_flow_graph_str => primitive!(1 control_flow_graph_str),
+        edge_has_condition => primitive!(1 edge_has_condition),
+        edge_condition => primitive!(1 edge_condition),
+        edge_head => primitive!(1 edge_head),
+        edge_tail => primitive!(1 edge_tail),
+        edge_str => primitive!(1 edge_str),
         elf_base_address => primitive!(1 elf_base_address),
         elf_from_file => primitive!(1 elf_from_file),
         elf_function_entries => primitive!(1 elf_function_entries),
@@ -500,9 +634,14 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         expression_get_lhs => primitive!(1 expression_get_lhs),
         expression_get_rhs => primitive!(1 expression_get_rhs),
         expression_get_bits => primitive!(1 expression_get_bits),
+        expression_str => primitive!(1 expression_str),
         function_control_flow_graph => primitive!(1 function_control_flow_graph),
         function_entry_name => primitive!(1 function_entry_name),
         function_entry_address => primitive!(1 function_entry_address),
+        function_entry_str => primitive!(1 function_entry_str),
+        instruction_index => primitive!(1 instruction_index),
+        instruction_operation => primitive!(1 instruction_operation),
+        instruction_str => primitive!(1 instruction_str),
         hex => primitive!(1 hex),
         mips_translate_function => primitive!(2 mips_translate_function),
         operation_assign => primitive!(2 operation_assign),
@@ -522,11 +661,13 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         operation_brc_target => primitive!(1 operation_brc_target),
         operation_brc_condition => primitive!(1 operation_brc_condition),
         operation_raise_expr => primitive!(1 operation_raise_expr),
+        operation_str => primitive!(1 operation_str),
         println => primitive!(1 println),
         program_new => primitive!(0 program_new),
         scalar_new => primitive!(2 scalar_new),
         scalar_name => primitive!(1 scalar_name),
-        scalar_bits => primitive!(1 scalar_bits)
+        scalar_bits => primitive!(1 scalar_bits),
+        scalar_str => primitive!(1 scalar_str)
     }).unwrap();
     
     vm
