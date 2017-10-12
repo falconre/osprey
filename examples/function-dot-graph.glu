@@ -17,6 +17,17 @@ let { (==) } = string.eq
 let (++) = string_prim.append
 
 
+// Import the falcon library
+let falcon = import! "lib/falcon.glu"
+let { control_flow_graph_dot_graph } = falcon
+let { elf_from_file } = falcon
+let { elf_function } = falcon
+let { elf_function_entries } = falcon
+let { function_control_flow_graph } = falcon
+let { function_entry_name } = falcon
+let { function_entry_address } = falcon
+
+
 // Load the elf
 let elf = elf_from_file filename
 

@@ -9,7 +9,7 @@ use std::path::Path;
 
 macro_rules! falcon_type_wrapper {
     ($p: path, $n: ident) => {
-        #[derive(Clone, Debug)] struct $n {x: $p}
+        #[derive(Clone, Debug)] struct $n { x: $p }
         impl VmType for $n { type Type = $n; }
         impl Traverseable for $n {}
         impl Userdata for $n {}
@@ -45,6 +45,24 @@ fn scalar_name(scalar: &IlScalar) -> &str {
 fn scalar_bits(scalar: &IlScalar) -> usize {
     scalar.x.bits()
 }
+
+
+falcon_type_wrapper!(falcon::il::Array, IlArray);
+
+fn array_new(name: String, size: u64) -> IlArray {
+    IlArray { x: falcon::il::Array::new(name, size) }
+}
+
+fn array_name(array: &IlArray) -> &str {
+    array.x.name()
+}
+
+fn array_size(array: &IlArray) -> u64 {
+    array.x.size()
+}
+
+
+falcon_type_wrapper!(falcon::il::MultiVar, IlMultiVar);
 
 
 falcon_type_wrapper!(falcon::il::Expression, IlExpression);
@@ -100,8 +118,218 @@ fn expression_trun(bits: usize, expr: &IlExpression) -> IlExpression {
     IlExpression { x: falcon::il::Expression::zext(bits, expr.x.clone()).unwrap() }
 }
 
+fn expression_type(expr: &IlExpression) -> String {
+    match expr.x {
+        falcon::il::Expression::Scalar(_) => "scalar",
+        falcon::il::Expression::Constant(_) => "constant",
+        falcon::il::Expression::Add(_,_) => "add",
+        falcon::il::Expression::Sub(_,_) => "sub",
+        falcon::il::Expression::Mul(_,_) => "mul",
+        falcon::il::Expression::Divu(_,_) => "divu",
+        falcon::il::Expression::Modu(_,_) => "modu",
+        falcon::il::Expression::Divs(_,_) => "divs",
+        falcon::il::Expression::Mods(_,_) => "mods",
+        falcon::il::Expression::And(_,_) => "and",
+        falcon::il::Expression::Or(_,_) => "or",
+        falcon::il::Expression::Xor(_,_) => "xor",
+        falcon::il::Expression::Shl(_,_) => "shl",
+        falcon::il::Expression::Shr(_,_) => "shr",
+        falcon::il::Expression::Cmpeq(_,_) => "cmpeq",
+        falcon::il::Expression::Cmpneq(_,_) => "cmpneq",
+        falcon::il::Expression::Cmplts(_,_) => "cmplts",
+        falcon::il::Expression::Cmpltu(_,_) => "cmpltu",
+        falcon::il::Expression::Zext(_,_) => "zext",
+        falcon::il::Expression::Sext(_,_) => "sext",
+        falcon::il::Expression::Trun(_,_) => "trun",
+    }.to_string()
+}
+
+fn expression_get_scalar(expr: &IlExpression) -> IlScalar {
+    match expr.x {
+        falcon::il::Expression::Scalar(ref scalar) =>
+            IlScalar { x: scalar.clone() },
+        _ => panic!("expression_get_scalar called on non-scalar")
+    }
+}
+
+fn expression_get_constant(expr: &IlExpression) -> IlConstant {
+    match expr.x {
+        falcon::il::Expression::Constant(ref constant) =>
+            IlConstant { x: constant.clone() },
+        _ => panic!("expression_get_constant called on non-constant")
+    }
+}
+
+fn expression_get_lhs(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Add(ref lhs, _) |
+        falcon::il::Expression::Sub(ref lhs, _) |
+        falcon::il::Expression::Mul(ref lhs, _) |
+        falcon::il::Expression::Divu(ref lhs, _) |
+        falcon::il::Expression::Modu(ref lhs, _) |
+        falcon::il::Expression::Divs(ref lhs, _) |
+        falcon::il::Expression::Mods(ref lhs, _) |
+        falcon::il::Expression::And(ref lhs, _) |
+        falcon::il::Expression::Or(ref lhs, _) |
+        falcon::il::Expression::Xor(ref lhs, _) |
+        falcon::il::Expression::Shl(ref lhs, _) |
+        falcon::il::Expression::Shr(ref lhs, _) |
+        falcon::il::Expression::Cmpeq(ref lhs, _) |
+        falcon::il::Expression::Cmpneq(ref lhs, _) |
+        falcon::il::Expression::Cmplts(ref lhs, _) |
+        falcon::il::Expression::Cmpltu(ref lhs, _) =>
+            IlExpression { x: *lhs.clone() },
+        _ => panic!("expression_get_lhs called on expr without lhs")
+    }
+}
+
+fn expression_get_rhs(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Add(_, ref rhs) |
+        falcon::il::Expression::Sub(_, ref rhs) |
+        falcon::il::Expression::Mul(_, ref rhs) |
+        falcon::il::Expression::Divu(_, ref rhs) |
+        falcon::il::Expression::Modu(_, ref rhs) |
+        falcon::il::Expression::Divs(_, ref rhs) |
+        falcon::il::Expression::Mods(_, ref rhs) |
+        falcon::il::Expression::And(_, ref rhs) |
+        falcon::il::Expression::Or(_, ref rhs) |
+        falcon::il::Expression::Xor(_, ref rhs) |
+        falcon::il::Expression::Shl(_, ref rhs) |
+        falcon::il::Expression::Shr(_, ref rhs) |
+        falcon::il::Expression::Cmpeq(_, ref rhs) |
+        falcon::il::Expression::Cmpneq(_, ref rhs) |
+        falcon::il::Expression::Cmplts(_, ref rhs) |
+        falcon::il::Expression::Cmpltu(_, ref rhs) |
+        falcon::il::Expression::Zext(_, ref rhs) |
+        falcon::il::Expression::Sext(_, ref rhs) |
+        falcon::il::Expression::Trun(_, ref rhs) =>
+            IlExpression { x: *rhs.clone() },
+        _ => panic!("expression_get_rhs called on expr without rhs")
+    }
+}
+
+fn expression_get_bits(expr: &IlExpression) -> usize {
+    match expr.x {
+        falcon::il::Expression::Zext(bits, _) |
+        falcon::il::Expression::Sext(bits, _) |
+        falcon::il::Expression::Trun(bits, _) => bits,
+        _ => panic!("expression_get_bits called on expr without bits")
+    }
+}
+
 
 falcon_type_wrapper!(falcon::il::Operation, IlOperation);
+
+fn operation_assign(dst: &IlScalar, src: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::assign(dst.x.clone(), src.x.clone()) }
+}
+
+fn operation_store(dst: &IlArray, index: &IlExpression, src: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::store(dst.x.clone(), index.x.clone(), src.x.clone()) }
+}
+
+fn operation_load(dst: &IlScalar, index: &IlExpression, src: &IlArray) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::load(dst.x.clone(), index.x.clone(), src.x.clone()) }
+}
+
+fn operation_brc(target: &IlExpression, condition: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::brc(target.x.clone(), condition.x.clone()) }
+}
+
+fn operation_raise(expr: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::raise(expr.x.clone())}
+}
+
+fn operation_type(operation: &IlOperation) -> String {
+    match operation.x {
+        falcon::il::Operation::Assign { .. } => "assign",
+        falcon::il::Operation::Store  { .. } => "store",
+        falcon::il::Operation::Load   { .. } => "load",
+        falcon::il::Operation::Brc    { .. } => "brc",
+        falcon::il::Operation::Raise  { .. } => "raise",
+        falcon::il::Operation::Phi    { .. } => "phi"
+    }.to_string()
+}
+
+fn operation_assign_dst(operation: &IlOperation) -> IlScalar {
+    match operation.x {
+        falcon::il::Operation::Assign {ref dst, ..} => IlScalar { x: dst.clone() },
+        _ => panic!("operation_assign_dst called on non-assign op")
+    }
+}
+
+fn operation_assign_src(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Assign {ref src, ..} => IlExpression { x: src.clone() },
+        _ => panic!("operation_assign_src called on non-assign op")
+    }
+}
+
+fn operation_store_dst(operation: &IlOperation) -> IlArray {
+    match operation.x {
+        falcon::il::Operation::Store {ref dst, ..} => IlArray { x: dst.clone() },
+        _ => panic!("operation_store_dst called on non-store op")
+    }
+}
+
+fn operation_store_index(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Store {ref index, ..} => IlExpression { x: index.clone() },
+        _ => panic!("operation_store_index called on non-store op")
+    }
+}
+
+fn operation_store_src(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Store {ref src, ..} => IlExpression { x: src.clone() },
+        _ => panic!("operation_store_src called on non-store op")
+    }
+}
+
+fn operation_load_dst(operation: &IlOperation) -> IlScalar {
+    match operation.x {
+        falcon::il::Operation::Load {ref dst, ..} => IlScalar { x: dst.clone() },
+        _ => panic!("operation_load_dst called on non-load op")
+    }
+}
+
+fn operation_load_index(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Load {ref index, ..} => IlExpression { x: index.clone() },
+        _ => panic!("operation_load_index called on non-load op")
+    }
+}
+
+fn operation_load_src(operation: &IlOperation) -> IlArray {
+    match operation.x {
+        falcon::il::Operation::Load {ref src, ..} => IlArray { x: src.clone() },
+        _ => panic!("operation_load_src called on non-load op")
+    }
+}
+
+fn operation_brc_target(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Brc {ref target, ..} => IlExpression { x: target.clone() },
+        _ => panic!("operation_brc_target called on non-brc op")
+    }
+}
+
+fn operation_brc_condition(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Brc {ref condition, ..} => IlExpression { x: condition.clone() },
+        _ => panic!("operation_brc_condition called on non-brc op")
+    }
+}
+
+fn operation_raise_expr(operation: &IlOperation) -> IlExpression {
+    match operation.x {
+        falcon::il::Operation::Raise {ref expr } => IlExpression { x: expr.clone() },
+        _ => panic!("operation_raise_expr called on non-raise op")
+    }
+}
+
+
 falcon_type_wrapper!(falcon::il::Instruction, IlInstruction);
 falcon_type_wrapper!(falcon::il::Block, IlBlock);
 
@@ -217,6 +445,8 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
 
     vm.register_type::<IlConstant>("IlConstant", &[]).unwrap();
     vm.register_type::<IlScalar>("IlScalar", &[]).unwrap();
+    vm.register_type::<IlArray>("IlArray", &[]).unwrap();
+    vm.register_type::<IlMultiVar>("IlMultiVar", &[]).unwrap();
     vm.register_type::<IlExpression>("IlExpression", &[]).unwrap();
     vm.register_type::<IlOperation>("IlOperation", &[]).unwrap();
     vm.register_type::<IlInstruction>("IlInstruction", &[]).unwrap();
@@ -228,49 +458,76 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<LoaderElf>("LoaderElf", &[]).unwrap();
     vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();
     vm.register_type::<LoaderMemory>("LoaderMemory", &[]).unwrap();
-    // vm.register_type::<TranslatorMips>("TranslatorMips", &[]).unwrap();
-    vm.define_global("constant_new", primitive!(2 constant_new)).unwrap();
-    vm.define_global("constant_bits", primitive!(1 constant_bits)).unwrap();
-    vm.define_global("constant_value", primitive!(1 constant_value)).unwrap();
-    vm.define_global("control_flow_graph_blocks", primitive!(1 control_flow_graph_blocks)).unwrap();
-    vm.define_global("control_flow_graph_dot_graph", primitive!(1 control_flow_graph_dot_graph)).unwrap();
-    vm.define_global("elf_base_address", primitive!(1 elf_base_address)).unwrap();
-    vm.define_global("elf_from_file", primitive!(1 elf_from_file)).unwrap();
-    vm.define_global("elf_function_entries", primitive!(1 elf_function_entries)).unwrap();
-    vm.define_global("elf_function", primitive!(2 elf_function)).unwrap();
-    vm.define_global("elf_memory", primitive!(1 elf_memory)).unwrap();
-    vm.define_global("expression_scalar", primitive!(1 expression_scalar)).unwrap();
-    vm.define_global("expression_constant", primitive!(1 expression_constant)).unwrap();
-    vm.define_global("expression_add", primitive!(2 expression_add)).unwrap();
-    vm.define_global("expression_sub", primitive!(2 expression_sub)).unwrap();
-    vm.define_global("expression_mul", primitive!(2 expression_mul)).unwrap();
-    vm.define_global("expression_divu", primitive!(2 expression_divu)).unwrap();
-    vm.define_global("expression_modu", primitive!(2 expression_modu)).unwrap();
-    vm.define_global("expression_divs", primitive!(2 expression_divs)).unwrap();
-    vm.define_global("expression_mods", primitive!(2 expression_mods)).unwrap();
-    vm.define_global("expression_and", primitive!(2 expression_and)).unwrap();
-    vm.define_global("expression_or", primitive!(2 expression_or)).unwrap();
-    vm.define_global("expression_xor", primitive!(2 expression_xor)).unwrap();
-    vm.define_global("expression_shl", primitive!(2 expression_shl)).unwrap();
-    vm.define_global("expression_shr", primitive!(2 expression_shr)).unwrap();
-    vm.define_global("expression_cmpeq", primitive!(2 expression_cmpeq)).unwrap();
-    vm.define_global("expression_cmpneq", primitive!(2 expression_cmpneq)).unwrap();
-    vm.define_global("expression_cmplts", primitive!(2 expression_cmplts)).unwrap();
-    vm.define_global("expression_cmpltu", primitive!(2 expression_cmpltu)).unwrap();
-    vm.define_global("expression_zext", primitive!(2 expression_zext)).unwrap();
-    vm.define_global("expression_sext", primitive!(2 expression_sext)).unwrap();
-    vm.define_global("expression_trun", primitive!(2 expression_trun)).unwrap();
-    vm.define_global("function_control_flow_graph", primitive!(1 function_control_flow_graph)).unwrap();
-    vm.define_global("function_entry_name", primitive!(1 function_entry_name)).unwrap();
-    vm.define_global("function_entry_address", primitive!(1 function_entry_address)).unwrap();
-    vm.define_global("hex", primitive!(1 hex)).unwrap();
-    // vm.define_global("mips_new", primitive!(0 mips_new)).unwrap();
-    vm.define_global("mips_translate_function", primitive!(2 mips_translate_function)).unwrap();
-    vm.define_global("println", primitive!(1 println)).unwrap();
-    vm.define_global("program_new", primitive!(0 program_new)).unwrap();
-    vm.define_global("scalar_new", primitive!(2 scalar_new)).unwrap();
-    vm.define_global("scalar_name", primitive!(1 scalar_name)).unwrap();
-    vm.define_global("scalar_bits", primitive!(1 scalar_bits)).unwrap();
+
+    vm.define_global("falcon_prim", record! {
+        array_new => primitive!(2 array_new),
+        array_name => primitive!(1 array_name),
+        array_size => primitive!(1 array_size),
+        constant_new => primitive!(2 constant_new),
+        constant_bits => primitive!(1 constant_bits),
+        constant_value => primitive!(1 constant_value),
+        control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
+        control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
+        elf_base_address => primitive!(1 elf_base_address),
+        elf_from_file => primitive!(1 elf_from_file),
+        elf_function_entries => primitive!(1 elf_function_entries),
+        elf_function => primitive!(2 elf_function),
+        elf_memory => primitive!(1 elf_memory),
+        expression_scalar => primitive!(1 expression_scalar),
+        expression_constant => primitive!(1 expression_constant),
+        expression_add => primitive!(2 expression_add),
+        expression_sub => primitive!(2 expression_sub),
+        expression_mul => primitive!(2 expression_mul),
+        expression_divu => primitive!(2 expression_divu),
+        expression_modu => primitive!(2 expression_modu),
+        expression_divs => primitive!(2 expression_divs),
+        expression_mods => primitive!(2 expression_mods),
+        expression_and => primitive!(2 expression_and),
+        expression_or => primitive!(2 expression_or),
+        expression_xor => primitive!(2 expression_xor),
+        expression_shl => primitive!(2 expression_shl),
+        expression_shr => primitive!(2 expression_shr),
+        expression_cmpeq => primitive!(2 expression_cmpeq),
+        expression_cmpneq => primitive!(2 expression_cmpneq),
+        expression_cmplts => primitive!(2 expression_cmplts),
+        expression_cmpltu => primitive!(2 expression_cmpltu),
+        expression_zext => primitive!(2 expression_zext),
+        expression_sext => primitive!(2 expression_sext),
+        expression_trun => primitive!(2 expression_trun),
+        expression_type => primitive!(1 expression_type),
+        expression_get_scalar => primitive!(1 expression_get_scalar),
+        expression_get_constant => primitive!(1 expression_get_constant),
+        expression_get_lhs => primitive!(1 expression_get_lhs),
+        expression_get_rhs => primitive!(1 expression_get_rhs),
+        expression_get_bits => primitive!(1 expression_get_bits),
+        function_control_flow_graph => primitive!(1 function_control_flow_graph),
+        function_entry_name => primitive!(1 function_entry_name),
+        function_entry_address => primitive!(1 function_entry_address),
+        hex => primitive!(1 hex),
+        mips_translate_function => primitive!(2 mips_translate_function),
+        operation_assign => primitive!(2 operation_assign),
+        operation_store => primitive!(3 operation_store),
+        operation_load => primitive!(3 operation_load),
+        operation_brc => primitive!(2 operation_brc),
+        operation_raise => primitive!(1 operation_raise),
+        operation_type => primitive!(1 operation_type),
+        operation_assign_src => primitive!(1 operation_assign_src),
+        operation_assign_dst => primitive!(1 operation_assign_dst),
+        operation_store_dst => primitive!(1 operation_store_dst),
+        operation_store_index => primitive!(1 operation_store_index),
+        operation_store_src => primitive!(1 operation_store_src),
+        operation_load_dst => primitive!(1 operation_load_dst),
+        operation_load_index => primitive!(1 operation_load_index),
+        operation_load_src => primitive!(1 operation_load_src),
+        operation_brc_target => primitive!(1 operation_brc_target),
+        operation_brc_condition => primitive!(1 operation_brc_condition),
+        operation_raise_expr => primitive!(1 operation_raise_expr),
+        println => primitive!(1 println),
+        program_new => primitive!(0 program_new),
+        scalar_new => primitive!(2 scalar_new),
+        scalar_name => primitive!(1 scalar_name),
+        scalar_bits => primitive!(1 scalar_bits)
+    }).unwrap();
     
     vm
 }

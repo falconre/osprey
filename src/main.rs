@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![recursion_limit="128"]
 
 extern crate clap;
 extern crate gluon;
