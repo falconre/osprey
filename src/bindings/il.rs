@@ -1,20 +1,8 @@
 use falcon;
-use falcon::loader::Loader;
-use falcon::translator::Arch;
-use gluon;
-use gluon::vm::api::{IO, Userdata, VmType};
+use gluon::vm::api::{Userdata, VmType};
 use gluon::vm::thread::{Traverseable};
-use std::path::Path;
+use gluon;
 
-
-macro_rules! falcon_type_wrapper {
-    ($p: path, $n: ident) => {
-        #[derive(Clone, Debug)] struct $n { x: $p }
-        impl VmType for $n { type Type = $n; }
-        impl Traverseable for $n {}
-        impl Userdata for $n {}
-    }
-}
 
 
 falcon_type_wrapper!(falcon::il::Constant, IlConstant);
@@ -492,81 +480,6 @@ fn program_new() -> IlProgram {
 falcon_type_wrapper!(falcon::il::ProgramLocation, IlProgramLocation);
 
 
-falcon_type_wrapper!(falcon::loader::elf::Elf, LoaderElf);
-
-fn elf_from_file(filename: String) -> LoaderElf {
-    let path = Path::new(&filename);
-    LoaderElf {
-        x: falcon::loader::elf::Elf::from_file(&path).unwrap()
-    }
-}
-
-fn elf_base_address(elf: &LoaderElf) -> u64 {
-    elf.x.base_address()
-}
-
-fn elf_function_entries(elf: &LoaderElf) -> Vec<LoaderFunctionEntry> {
-    elf.x
-        .function_entries()
-        .unwrap()
-        .iter()
-        .map(|fe| LoaderFunctionEntry { x: fe.clone() })
-        .collect::<Vec<LoaderFunctionEntry>>()
-}
-
-fn elf_memory(elf: &LoaderElf) -> LoaderMemory {
-    LoaderMemory { x: elf.x.memory().unwrap() }
-}
-
-fn elf_function(elf: &LoaderElf, address: u64) -> IlFunction {
-    IlFunction { x: elf.x.function(address).unwrap() }
-}
-
-falcon_type_wrapper!(falcon::loader::FunctionEntry, LoaderFunctionEntry);
-
-fn function_entry_name(function_entry: &LoaderFunctionEntry) -> String {
-    function_entry.x.name().to_string()
-}
-
-fn function_entry_address(function_entry: &LoaderFunctionEntry) -> u64 {
-    function_entry.x.address()
-}
-
-fn function_entry_str(function_entry: &LoaderFunctionEntry) -> String {
-    format!("{}", function_entry.x)
-}
-
-falcon_type_wrapper!(falcon::loader::memory::Memory, LoaderMemory);
-
-
-falcon_type_wrapper!(falcon::executor::engine::Engine, ExecutorEngine);
-falcon_type_wrapper!(falcon::executor::memory::Memory, ExecutorMemory);
-
-// falcon_type_wrapper!(falcon::translator::mips::Mips, TranslatorMips);
-
-// fn mips_new() -> TranslatorMips {
-//     TranslatorMips { x: falcon::translator::mips::Mips::new() }
-// }
-
-
-fn mips_translate_function(
-    memory: &LoaderMemory,
-    address: u64
-) -> IlFunction {
-        let mips = falcon::translator::mips::Mips::new();
-        IlFunction { x: mips.translate_function(&memory.x, address).unwrap() }
-}
-
-
-fn hex(u: usize) -> String {
-    format!("{:x}", u)
-}
-
-
-fn println(string: String) {
-    println!("{}", string);
-}
-
 
 pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
 
@@ -583,11 +496,8 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlFunction>("IlFunction", &[]).unwrap();
     vm.register_type::<IlProgram>("IlProgram", &[]).unwrap();
     vm.register_type::<IlProgramLocation>("IlProgramLocation", &[]).unwrap();
-    vm.register_type::<LoaderElf>("LoaderElf", &[]).unwrap();
-    vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();
-    vm.register_type::<LoaderMemory>("LoaderMemory", &[]).unwrap();
 
-    vm.define_global("falcon_prim", record! {
+    vm.define_global("falcon_il_prim", record! {
         array_new => primitive!(2 array_new),
         array_name => primitive!(1 array_name),
         array_size => primitive!(1 array_size),
@@ -613,11 +523,6 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         edge_head => primitive!(1 edge_head),
         edge_tail => primitive!(1 edge_tail),
         edge_str => primitive!(1 edge_str),
-        elf_base_address => primitive!(1 elf_base_address),
-        elf_from_file => primitive!(1 elf_from_file),
-        elf_function_entries => primitive!(1 elf_function_entries),
-        elf_function => primitive!(2 elf_function),
-        elf_memory => primitive!(1 elf_memory),
         expression_scalar => primitive!(1 expression_scalar),
         expression_constant => primitive!(1 expression_constant),
         expression_add => primitive!(2 expression_add),
@@ -647,14 +552,9 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         expression_get_bits => primitive!(1 expression_get_bits),
         expression_str => primitive!(1 expression_str),
         function_control_flow_graph => primitive!(1 function_control_flow_graph),
-        function_entry_name => primitive!(1 function_entry_name),
-        function_entry_address => primitive!(1 function_entry_address),
-        function_entry_str => primitive!(1 function_entry_str),
         instruction_index => primitive!(1 instruction_index),
         instruction_operation => primitive!(1 instruction_operation),
         instruction_str => primitive!(1 instruction_str),
-        hex => primitive!(1 hex),
-        mips_translate_function => primitive!(2 mips_translate_function),
         operation_assign => primitive!(2 operation_assign),
         operation_store => primitive!(3 operation_store),
         operation_load => primitive!(3 operation_load),
@@ -673,31 +573,12 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         operation_brc_condition => primitive!(1 operation_brc_condition),
         operation_raise_expr => primitive!(1 operation_raise_expr),
         operation_str => primitive!(1 operation_str),
-        println => primitive!(1 println),
         program_new => primitive!(0 program_new),
         scalar_new => primitive!(2 scalar_new),
         scalar_name => primitive!(1 scalar_name),
         scalar_bits => primitive!(1 scalar_bits),
         scalar_str => primitive!(1 scalar_str)
     }).unwrap();
-    
-    vm
-}
-
-
-pub fn run_code(code: &str) -> gluon::RootedThread {
-    let vm = gluon::new_vm();
-
-    let vm = bindings(vm);
-
-    let mut compiler = gluon::Compiler::new();
-    match compiler.run_io_expr::<IO<()>>(&vm, "code", code) {
-        Ok(r) => r,
-        Err(e) => {
-            println!("{}", e);
-            panic!("Compile error");
-        }
-    };
 
     vm
 }
