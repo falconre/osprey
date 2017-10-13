@@ -118,75 +118,111 @@ let edge_condition edge =
 
 
 {
-    block_index = falcon_prim.block_index,
-    block_instructinos = falcon_prim.block_instructions,
-    block_assign = falcon_prim.block_assign,
-    block_store = falcon_prim.block_store,
-    block_load = falcon_prim.block_load,
-    block_brc = falcon_prim.block_brc,
-    block_raise = falcon_prim.block_raise,
-    block_str = falcon_prim.block_str,
+    il = {
+        block = {
+            index = falcon_prim.block_index,
+            instructions = falcon_prim.block_instructions,
+            assign = falcon_prim.block_assign,
+            store = falcon_prim.block_store,
+            load = falcon_prim.block_load,
+            brc = falcon_prim.block_brc,
+            raise = falcon_prim.block_raise,
+            str = falcon_prim.block_str
+        },
 
-    control_flow_graph_blocks = falcon_prim.control_flow_graph_blocks,
-    control_flow_graph_dot_graph = falcon_prim.control_flow_graph_dot_graph,
-    control_flow_graph_str = falcon_prim.control_flow_graph_str,
+        control_flow_graph = {
+            blocks = falcon_prim.control_flow_graph_blocks,
+            dot_graph = falcon_prim.control_flow_graph_dot_graph,
+            edges = falcon_prim.control_flow_graph_edges,
+            str = falcon_prim.control_flow_graph_str
+        },
 
-    constant_new = falcon_prim.constant_new,
-    constant_value = falcon_prim.constant_value,
-    constant_bits = falcon_prim.constant_bits,
-    constant_str = falcon_prim.control_flow_graph_str,
+        constant = {
+            new = falcon_prim.constant_new,
+            value = falcon_prim.constant_value,
+            bits = falcon_prim.constant_bits,
+            str = falcon_prim.constant_str
+        },
 
-    edge_condition = edge_condition,
-    edge_head = falcon_prim.edge_head,
-    edge_tail = falcon_prim.edge_tail,
-    edge_str = falcon_prim.edge_str,
+        edge = {
+            condition = falcon_prim.edge_condition,
+            head = falcon_prim.edge_head,
+            tail = falcon_prim.edge_tail,
+            str = falcon_prim.edge_str
+        },
 
-    elf_base_address = falcon_prim.elf_base_address,
-    elf_from_file = falcon_prim.elf_from_file,
-    elf_function_entries = falcon_prim.elf_function_entries,
-    elf_function = falcon_prim.elf_function,
-    elf_memory = falcon_prim.elf_memory,
+        expression = {
+            scalar = falcon_prim.expression_scalar,
+            constant = falcon_prim.expression_constant,
+            add = falcon_prim.expression_add,
+            sub = falcon_prim.expression_sub,
+            mul = falcon_prim.expression_mul,
+            divu = falcon_prim.expression_divu,
+            modu = falcon_prim.expression_modu,
+            divs = falcon_prim.expression_divs,
+            mods = falcon_prim.expression_mods,
+            and_ = falcon_prim.expression_and,
+            or = falcon_prim.expression_or,
+            xor = falcon_prim.expression_xor,
+            shl = falcon_prim.expression_shl,
+            shr = falcon_prim.expression_shr,
+            cmpeq = falcon_prim.expression_cmpeq,
+            cmpneq = falcon_prim.expression_cmpneq,
+            cmplts = falcon_prim.expression_cmplts,
+            cmpltu = falcon_prim.expression_cmpltu,
+            zext = falcon_prim.expression_zext,
+            sext = falcon_prim.expression_sext,
+            trun = falcon_prim.expression_trun,
+            match_ = expression_match,
+            str = falcon_prim.expression_str,
+        },
 
-    expression_scalar = falcon_prim.expression_scalar,
-    expression_constant = falcon_prim.expression_constant,
-    expression_add = falcon_prim.expression_add,
-    expression_sub = falcon_prim.expression_sub,
-    expression_mul = falcon_prim.expression_mul,
-    expression_divu = falcon_prim.expression_divu,
-    expression_modu = falcon_prim.expression_modu,
-    expression_divs = falcon_prim.expression_divs,
-    expression_mods = falcon_prim.expression_mods,
-    expression_and = falcon_prim.expression_and,
-    expression_or = falcon_prim.expression_or,
-    expression_xor = falcon_prim.expression_xor,
-    expression_shl = falcon_prim.expression_shl,
-    expression_shr = falcon_prim.expression_shr,
-    expression_cmpeq = falcon_prim.expression_cmpeq,
-    expression_cmpneq = falcon_prim.expression_cmpneq,
-    expression_cmplts = falcon_prim.expression_cmplts,
-    expression_cmpltu = falcon_prim.expression_cmpltu,
-    expression_zext = falcon_prim.expression_zext,
-    expression_sext = falcon_prim.expression_sext,
-    expression_trun = falcon_prim.expression_trun,
-    expression_match = expression_match,
+        function = {
+            control_flow_graph = falcon_prim.function_control_flow_graph
+        },
 
-    function_control_flow_graph = falcon_prim.function_control_flow_graph,
+        instruction = {
+            index = falcon_prim.instruction_index,
+            operation = falcon_prim.instruction_operation,
+            str = falcon_prim.instruction_str
+        },
 
-    function_entry_name = falcon_prim.function_entry_name,
-    function_entry_address = falcon_prim.function_entry_address,
-    function_entry_str = falcon_prim.function_entry_str,
+        operation = {
+            assign = falcon_prim.operation_assign,
+            store = falcon_prim.operation_store,
+            load = falcon_prim.operation_load,
+            brc = falcon_prim.operation_brc,
+            raise = falcon_prim.operation_raise,
+            match_ = operation_match,
+            str = falcon_prim.operation_str
+        },
 
-    instruction_index = falcon_prim.instruction_index,
-    instruction_operation = falcon_prim.instruction_operation,
+        scalar = {
+            new = falcon_prim.scalar_new,
+            name = falcon_prim.scalar_name,
+            bits = falcon_prim.scalar_bits,
+            str = falcon_prim.scalar_str
+        }
+    },
 
-    operation_assign = falcon_prim.operation_assign,
-    operation_store = falcon_prim.operation_store,
-    operation_load = falcon_prim.operation_load,
-    operation_brc = falcon_prim.operation_brc,
-    operation_raise = falcon_prim.operation_raise,
-    operation_match = operation_match,
+    loader = {
+        elf = {
+            base_address = falcon_prim.elf_base_address,
+            from_file = falcon_prim.elf_from_file,
+            function_entries = falcon_prim.elf_function_entries,
+            function = falcon_prim.elf_function,
+            memory = falcon_prim.elf_memory
+        },
 
-    scalar_new = falcon_prim.scalar_new,
-    scalar_name = falcon_prim.scalar_name,
-    scalar_bits = falcon_prim.scalar_bits,
+        function_entry = {
+            name = falcon_prim.function_entry_name,
+            address = falcon_prim.function_entry_address,
+            str = falcon_prim.function_entry_str
+        }
+    },
+
+    types = {
+        Operation,
+        Expression
+    }
 }

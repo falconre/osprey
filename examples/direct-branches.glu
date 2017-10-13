@@ -1,0 +1,127 @@
+// This script finds direct branches in a binary
+
+let falcon = import! "lib/falcon.glu"
+let io = import! "std/io.glu"
+let list = import! "std/list.glu"
+let prelude = import! "std/prelude.glu"
+let string = import! "std/string.glu"
+let types = import! "std/types.glu"
+
+let { il, loader } = falcon
+let { Expression, Operation } = falcon.types
+let { List } = list
+let { (|>) } = prelude
+let (++) = string_prim.append
+let { Option, Bool } = types
+
+let filename = "path_to_program"
+let function_name = "main"
+
+
+let append l m =
+    match l with
+    | Nil -> m
+    | Cons hd tl -> Cons hd (append tl m)
+
+let flatten l =
+    match l with
+    | Nil -> Nil
+    | Cons hd tl -> append hd (flatten tl)
+
+let filter f l =
+    match l with
+    | Nil -> Nil
+    | Cons hd tl -> 
+        if f hd then
+            Cons hd (filter f tl)
+        else
+            filter f tl
+
+let unwrap option = 
+    match option with
+    | Some x -> x
+    | None -> error "unwrapped option with value None"
+
+let is_some option =
+    match option with
+    | Some _ -> True
+    | None -> False
+
+let foldl f x xs =
+    match xs with
+    | Cons y ys -> foldl f (f x y) ys
+    | Nil -> x
+
+let map f l =
+    match l with
+    | Nil -> Nil
+    | Cons hd tl -> Cons (f hd) (map f tl)
+
+
+let all_constants e : IlExpression -> Bool =
+    match il.expression.match_ e with
+    | Scalar s -> False
+    | Constant c -> True
+    | Add l r -> (all_constants l) && (all_constants r)
+    | Sub l r -> (all_constants l) && (all_constants r)
+    | Mul l r -> (all_constants l) && (all_constants r)
+    | Divu l r -> (all_constants l) && (all_constants r)
+    | Modu l r -> (all_constants l) && (all_constants r)
+    | Divs l r -> (all_constants l) && (all_constants r)
+    | Mods l r -> (all_constants l) && (all_constants r)
+    | And l r -> (all_constants l) && (all_constants r)
+    | Or l r -> (all_constants l) && (all_constants r)
+    | Xor l r -> (all_constants l) && (all_constants r)
+    | Shl l r -> (all_constants l) && (all_constants r)
+    | Shr l r -> (all_constants l) && (all_constants r)
+    | Cmpeq l r -> (all_constants l) && (all_constants r)
+    | Cmpneq l r -> (all_constants l) && (all_constants r)
+    | Cmpltu l r -> (all_constants l) && (all_constants r)
+    | Cmplts l r -> (all_constants l) && (all_constants r)
+    | Zext _ src -> (all_constants src)
+    | Sext _ src -> (all_constants src)
+    | Trun _ src -> (all_constants src)
+
+
+let brc_is_direct instruction : IlInstruction -> Bool =
+    match il.instruction.operation instruction |> il.operation.match_ with
+    | Brc target _ -> all_constants target
+    | _ -> error "brc_is_direct given non-brc instruction"
+
+
+let find_brcs function : IlFunction -> List IlInstruction =
+    let is_brc i =
+        match il.operation.match_ (il.instruction.operation i) with
+        | Brc target condition -> Some i
+        | _ -> None
+
+    let control_flow_graph = il.function.control_flow_graph function
+    let blocks = il.control_flow_graph.blocks control_flow_graph |> list.of
+    let instructions = map il.block.instructions blocks |> map list.of |> flatten
+    map is_brc instructions |> filter is_some |> map unwrap
+
+
+let find_function elf function_name =
+    let find functions i name =
+        if i == (array.len functions) then
+            None
+        else
+            let function_entry = array.index functions i
+            if (loader.function_entry.name function_entry) == name then
+                Some function_entry
+            else
+                find functions (i + 1) name
+    find (loader.elf.function_entries elf) 0 function_name
+
+
+let elf = loader.elf.from_file filename
+
+let function_entry = find_function elf function_name |> unwrap
+let function = loader.function_entry.address function_entry |> loader.elf.function elf
+
+let brcs = find_brcs function |> filter brc_is_direct
+let strings = map il.instruction.str brcs
+
+let lines = foldl (\ l r -> l ++ "\n" ++ r) "" strings
+
+io.println lines

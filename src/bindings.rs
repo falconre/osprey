@@ -454,6 +454,16 @@ fn control_flow_graph_blocks(control_flow_graph: &IlControlFlowGraph)
                       .collect::<Vec<IlBlock>>()
 }
 
+fn control_flow_graph_edges(control_flow_graph: &IlControlFlowGraph)
+    -> Vec<IlEdge> {
+
+    control_flow_graph.x
+                      .edges()
+                      .iter()
+                      .map(|e| IlEdge { x: (*e).clone() })
+                      .collect::<Vec<IlEdge>>()
+}
+
 fn control_flow_graph_dot_graph(control_flow_graph: &IlControlFlowGraph) -> String {
     control_flow_graph.x.graph().dot_graph()
 }
@@ -596,6 +606,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         constant_str => primitive!(1 constant_str),
         control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
         control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
+        control_flow_graph_edges => primitive!(1 control_flow_graph_edges),
         control_flow_graph_str => primitive!(1 control_flow_graph_str),
         edge_has_condition => primitive!(1 edge_has_condition),
         edge_condition => primitive!(1 edge_condition),
