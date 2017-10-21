@@ -3,14 +3,14 @@
 let falcon = import! "lib/falcon.glu"
 let io = import! "std/io.glu"
 let list = import! "std/list.glu"
-let prelude = import! "std/prelude.glu"
+let function = import! "std/function.glu"
 let string = import! "std/string.glu"
 let types = import! "std/types.glu"
 
 let { il, loader } = falcon
 let { Expression, Operation } = falcon.types
 let { List } = list
-let { (|>) } = prelude
+let { (|>) } = function
 let (++) = string_prim.append
 let { Option, Bool } = types
 

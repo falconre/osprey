@@ -1,7 +1,7 @@
 let io = import! "std/io.glu"
 
-let prelude = import! "std/prelude.glu"
-let { (|>) } = prelude
+let function = import! "std/function.glu"
+let { (|>) } = function
 
 let types = import! "std/types.glu"
 let { Option } = types
@@ -11,35 +11,35 @@ let { assert } = test
 
 let string = import! "std/string.glu"
 let { (==) } = string.eq
+let (++) = string_prim.append
 
-type Expression = | Scalar   s
-                  | Constant c
-                  | Add      l r
-                  | Sub      l r
-                  | Mul      l r
-                  | Divu     l r
-                  | Modu     l r
-                  | Divs     l r
-                  | Mods     l r
-                  | And      l r
-                  | Or       l r
-                  | Xor      l r
-                  | Shl      l r
-                  | Shr      l r
-                  | Cmpeq    l r
-                  | Cmpneq   l r
-                  | Cmplts   l r
-                  | Cmpltu   l r
-                  | Zext     bits src
-                  | Sext     bits src
-                  | Trun     bits src
+type Expression = | Scalar   IlScalar
+                  | Constant IlConstant
+                  | Add      IlExpression IlExpression
+                  | Sub      IlExpression IlExpression
+                  | Mul      IlExpression IlExpression
+                  | Divu     IlExpression IlExpression
+                  | Modu     IlExpression IlExpression
+                  | Divs     IlExpression IlExpression
+                  | Mods     IlExpression IlExpression
+                  | And      IlExpression IlExpression
+                  | Or       IlExpression IlExpression
+                  | Xor      IlExpression IlExpression
+                  | Shl      IlExpression IlExpression
+                  | Shr      IlExpression IlExpression
+                  | Cmpeq    IlExpression IlExpression
+                  | Cmpneq   IlExpression IlExpression
+                  | Cmplts   IlExpression IlExpression
+                  | Cmpltu   IlExpression IlExpression
+                  | Zext     Int IlExpression
+                  | Sext     Int IlExpression
+                  | Trun     Int IlExpression
 
-type Operation = | Assign dst src
-                 | Store  dst index src
-                 | Load   dst index src
-                 | Brc    target condition
-                 | Phi    dst src
-                 | Raise  expr
+type Operation = | Assign IlScalar IlExpression
+                 | Store  IlArray IlExpression IlExpression
+                 | Load   IlScalar IlExpression IlArray
+                 | Brc    IlExpression IlExpression
+                 | Raise  IlExpression
 
 
 let expression_match expression =
@@ -108,7 +108,7 @@ let operation_match operation =
     else if typ == "raise" then
         Raise (fip.operation_raise_expr operation)
     else
-        Phi 0 0
+        error ("bad operation type" ++ typ)
 
 
 let edge_condition edge =

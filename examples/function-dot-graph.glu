@@ -5,9 +5,9 @@
 // Some standard boilerplate stuff for gluon
 let io = import! "std/io.glu"
 let option = import! "std/types.glu"
-let prelude = import! "std/prelude.glu"
+let function = import! "std/function.glu"
 let { Option } = option
-let { (|>) } = prelude
+let { (|>) } = function
 
 let string = import! "std/string.glu"
 let { (==) } = string.eq
