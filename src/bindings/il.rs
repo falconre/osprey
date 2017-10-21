@@ -469,6 +469,7 @@ fn function_control_flow_graph(function: &IlFunction) -> IlControlFlowGraph {
     }
 }
 
+
 falcon_type_wrapper!(falcon::il::Program, IlProgram);
 
 fn program_new() -> IlProgram {
@@ -479,6 +480,11 @@ fn program_new() -> IlProgram {
 
 falcon_type_wrapper!(falcon::il::ProgramLocation, IlProgramLocation);
 
+fn program_location_from_address(program: &IlProgram, address: u64) -> IlProgramLocation {
+    IlProgramLocation {
+        x: falcon::il::RefProgramLocation::from_address(&program.x, address).unwrap().into()
+    }
+}
 
 
 pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
@@ -574,6 +580,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         operation_raise_expr => primitive!(1 operation_raise_expr),
         operation_str => primitive!(1 operation_str),
         program_new => primitive!(0 program_new),
+        program_location_from_address => primitive!(2 program_location_from_address),
         scalar_new => primitive!(2 scalar_new),
         scalar_name => primitive!(1 scalar_name),
         scalar_bits => primitive!(1 scalar_bits),

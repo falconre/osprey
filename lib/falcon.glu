@@ -119,6 +119,9 @@ let edge_condition edge =
 
 
 {
+    hex = falcon_prim.hex,
+    println = falcon_prim.println,
+    env = falcon_prim.env,
     il = {
         block = {
             index = falcon_il_prim.block_index,
@@ -196,6 +199,10 @@ let edge_condition edge =
             raise = falcon_il_prim.operation_raise,
             match_ = operation_match,
             str = falcon_il_prim.operation_str
+        },
+
+        program_location = {
+            from_address = falcon_il_prim.program_location_from_address
         },
 
         scalar = {

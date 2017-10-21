@@ -5,6 +5,7 @@ use gluon::vm::thread::{Traverseable};
 use gluon;
 use std::path::Path;
 
+use bindings::types;
 use bindings::il;
 
 falcon_type_wrapper!(falcon::loader::elf::Elf, LoaderElf);
@@ -37,10 +38,14 @@ fn elf_function(elf: &LoaderElf, address: u64) -> il::IlFunction {
     il::IlFunction { x: elf.x.function(address).unwrap() }
 }
 
+fn elf_architecture(elf: &LoaderElf) -> types::TypesArchitecture {
+    types::TypesArchitecture { x: elf.x.architecture().unwrap() }
+}
+
 falcon_type_wrapper!(falcon::loader::FunctionEntry, LoaderFunctionEntry);
 
-fn function_entry_name(function_entry: &LoaderFunctionEntry) -> String {
-    function_entry.x.name().to_string()
+fn function_entry_name(function_entry: &LoaderFunctionEntry) -> Option<String> {
+    function_entry.x.name().clone()
 }
 
 fn function_entry_address(function_entry: &LoaderFunctionEntry) -> u64 {

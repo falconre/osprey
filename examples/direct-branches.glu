@@ -14,10 +14,6 @@ let { (|>) } = prelude
 let (++) = string_prim.append
 let { Option, Bool } = types
 
-let filename = "path_to_program"
-let function_name = "main"
-
-
 let append l m =
     match l with
     | Nil -> m
@@ -83,6 +79,10 @@ let all_constants e : IlExpression -> Bool =
     | Trun _ src -> (all_constants src)
 
 
+let filename = falcon.env "FILENAME" |> unwrap
+let function_name = falcon.env "FUNCTION_NAME" |> unwrap
+
+
 let brc_is_direct instruction : IlInstruction -> Bool =
     match il.instruction.operation instruction |> il.operation.match_ with
     | Brc target _ -> all_constants target
@@ -107,10 +107,13 @@ let find_function elf function_name =
             None
         else
             let function_entry = array.index functions i
-            if (loader.function_entry.name function_entry) == name then
-                Some function_entry
-            else
-                find functions (i + 1) name
+            match loader.function_entry.name function_entry with
+            | Some entry_name ->
+                if entry_name == name then
+                    Some function_entry
+                else
+                    find functions (i + 1) name
+            | None -> find functions (i + 1) name
     find (loader.elf.function_entries elf) 0 function_name
 
 

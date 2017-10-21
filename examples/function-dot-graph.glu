@@ -2,24 +2,31 @@
 // prints out a graphviz dot graph of that function in Falcon IL.
 
 
-// Arguments to our script
-let filename = "path_to_binary"
-let function_name = "main"
-
-
 // Some standard boilerplate stuff for gluon
 let io = import! "std/io.glu"
 let option = import! "std/types.glu"
+let prelude = import! "std/prelude.glu"
 let { Option } = option
+let { (|>) } = prelude
 
 let string = import! "std/string.glu"
 let { (==) } = string.eq
 let (++) = string_prim.append
 
+let unwrap option = 
+    match option with
+    | Some x -> x
+    | None -> error "unwrapped option with value None"
+
 
 // Import the falcon library
 let falcon = import! "lib/falcon.glu"
 let { il, loader } = falcon
+
+
+// Arguments to our script
+let filename = falcon.env "FILENAME" |> unwrap
+let function_name = falcon.env "FUNCTION_NAME" |> unwrap
 
 
 // Load the elf
@@ -34,10 +41,13 @@ let find_function elf function_name =
             None
         else
             let function_entry = array.index functions i
-            if (loader.function_entry.name function_entry) == name then
-                Some function_entry
-            else
-                find functions (i + 1) name
+            match loader.function_entry.name function_entry with
+            | Some entry_name ->
+                if entry_name == name then
+                    Some function_entry
+                else
+                    find functions (i + 1) name
+            | None -> find functions (i + 1) name
     find (loader.elf.function_entries elf) 0 function_name
 
 

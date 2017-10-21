@@ -5,7 +5,7 @@ authors = [ "Alex Eubanks <endeavor@rainbowsandpwnies.com>" ]
 
 [dependencies]
 clap = "2.26"
-falcon = { git = "https://github.com/falconre/falcon", rev="d4793f108ab8842d2e", features=["thread_safe"] }
+falcon = { git = "https://github.com/falconre/falcon", rev="740bc80eb2b9e35503", features=["thread_safe"] }
 gluon = "0.6.1"
 gluon_vm = "0.6.1"
 
