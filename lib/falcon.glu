@@ -13,6 +13,7 @@ let string = import! "std/string.glu"
 let { (==) } = string.eq
 let (++) = string_prim.append
 
+
 type Expression = | Scalar   IlScalar
                   | Constant IlConstant
                   | Add      IlExpression IlExpression
@@ -34,13 +35,6 @@ type Expression = | Scalar   IlScalar
                   | Zext     Int IlExpression
                   | Sext     Int IlExpression
                   | Trun     Int IlExpression
-
-type Operation = | Assign IlScalar IlExpression
-                 | Store  IlArray IlExpression IlExpression
-                 | Load   IlScalar IlExpression IlArray
-                 | Brc    IlExpression IlExpression
-                 | Raise  IlExpression
-
 
 let expression_match expression =
     let get_lhs = falcon_il_prim.expression_get_lhs
@@ -93,9 +87,15 @@ let expression_match expression =
         Trun (get_bits expression) (get_rhs expression)
 
 
+type Operation = | Assign IlScalar IlExpression
+                 | Store  IlArray IlExpression IlExpression
+                 | Load   IlScalar IlExpression IlArray
+                 | Brc    IlExpression IlExpression
+                 | Raise  IlExpression
+
 let operation_match operation =
-    let typ = falcon_il_prim.operation_type operation
     let fip = falcon_il_prim
+    let typ = fip.operation_type operation
 
     if typ == "assign" then
         Assign (fip.operation_assign_dst operation) (fip.operation_assign_src operation)
@@ -109,6 +109,23 @@ let operation_match operation =
         Raise (fip.operation_raise_expr operation)
     else
         error ("bad operation type" ++ typ)
+
+
+type FunctionLocation = | Instruction IlBlock IlInstruction
+                        | Edge IlEdge
+                        | EmptyBlock IlBlock
+
+let function_location_match function_location =
+    let fl = function_location
+    let fip = falcon_il_prim
+    let typ = fip.function_location_type fl
+
+    if typ == "instruction" then
+        Instruction (fip.function_location_block fl |> unwrap) (fip.function_location_instruction fl |> unwrap)
+    else if typ == "edge" then
+        Edge (fip.function_location_edge fl |> unwrap)
+    else if typ == "empty_block" then
+        EmptyBlock (fip.function_location_block fl |> unwrap)
 
 
 let edge_condition edge =
@@ -185,6 +202,10 @@ let edge_condition edge =
             control_flow_graph = falcon_il_prim.function_control_flow_graph
         },
 
+        function_location = {
+            match_ = function_location_match
+        }
+
         instruction = {
             index = falcon_il_prim.instruction_index,
             operation = falcon_il_prim.instruction_operation,
@@ -203,6 +224,7 @@ let edge_condition edge =
 
         program_location = {
             from_address = falcon_il_prim.program_location_from_address
+            function_location = falcon_il_prim.program_location_function_location
         },
 
         scalar = {
@@ -231,6 +253,7 @@ let edge_condition edge =
 
     types = {
         Operation,
-        Expression
+        Expression,
+        FunctionLocation
     }
 }

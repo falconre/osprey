@@ -477,13 +477,62 @@ fn program_new() -> IlProgram {
 }
 
 
-
 falcon_type_wrapper!(falcon::il::ProgramLocation, IlProgramLocation);
 
 fn program_location_from_address(program: &IlProgram, address: u64) -> IlProgramLocation {
     IlProgramLocation {
         x: falcon::il::RefProgramLocation::from_address(&program.x, address).unwrap().into()
     }
+}
+
+fn program_location_function_location(program_location: &IlProgramLocation) -> IlFunctionLocation {
+    IlFunctionLocation {
+        x: program_location.x.function_location().clone()
+    }
+}
+
+
+falcon_type_wrapper!(falcon::il::FunctionLocation, IlFunctionLocation);
+
+fn function_location_type(function_location: &IlFunctionLocation) -> String {
+    match function_location.x {
+        falcon::il::FunctionLocation::Instruction(_, _) => "instruction",
+        falcon::il::FunctionLocation::Edge(_, _) => "edge",
+        falcon::il::FunctionLocation::EmptyBlock(_) => "empty_block"
+    }.to_string()
+}
+
+fn function_location_instruction(function_location: &IlFunctionLocation, function: &IlFunction)
+-> Option<IlInstruction> {
+
+    if let Some(ref_function_location) = function_location.x.apply(&function.x) {
+        if let Some(instruction) = ref_function_location.instruction() {
+            return Some(IlInstruction { x: instruction.clone() });
+        }
+    }
+    None
+}
+
+fn function_location_edge(function_location: &IlFunctionLocation, function: &IlFunction)
+-> Option<IlEdge> {
+
+    if let Some(ref_function_location) = function_location.x.apply(&function.x) {
+        if let Some(edge) = ref_function_location.edge() {
+            return Some(IlEdge { x: edge.clone() });
+        }
+    }
+    None
+}
+
+fn function_location_block(function_location: &IlFunctionLocation, function: &IlFunction)
+-> Option<IlBlock> {
+
+    if let Some(ref_function_location) = function_location.x.apply(&function.x) {
+        if let Some(block) = ref_function_location.block() {
+            return Some(IlBlock { x: block.clone() });
+        }
+    }
+    None
 }
 
 
@@ -502,6 +551,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlFunction>("IlFunction", &[]).unwrap();
     vm.register_type::<IlProgram>("IlProgram", &[]).unwrap();
     vm.register_type::<IlProgramLocation>("IlProgramLocation", &[]).unwrap();
+    vm.register_type::<IlFunctionLocation>("IlFunctionLocation", &[]).unwrap();
 
     vm.define_global("falcon_il_prim", record! {
         array_new => primitive!(2 array_new),
@@ -558,6 +608,10 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         expression_get_bits => primitive!(1 expression_get_bits),
         expression_str => primitive!(1 expression_str),
         function_control_flow_graph => primitive!(1 function_control_flow_graph),
+        function_location_type => primitive!(1 function_location_type),
+        function_location_instruction => primitive!(2 function_location_instruction),
+        function_location_edge => primitive!(2 function_location_edge),
+        function_location_block => primitive!(2 function_location_block),
         instruction_index => primitive!(1 instruction_index),
         instruction_operation => primitive!(1 instruction_operation),
         instruction_str => primitive!(1 instruction_str),
@@ -581,6 +635,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         operation_str => primitive!(1 operation_str),
         program_new => primitive!(0 program_new),
         program_location_from_address => primitive!(2 program_location_from_address),
+        program_location_function_location => primitive!(1 program_location_function_location),
         scalar_new => primitive!(2 scalar_new),
         scalar_name => primitive!(1 scalar_name),
         scalar_bits => primitive!(1 scalar_bits),
