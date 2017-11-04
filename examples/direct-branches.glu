@@ -1,6 +1,6 @@
 // This script finds direct branches in a binary
 
-let falcon = import! "lib/falcon.glu"
+let falcon = import! "scripts/falcon.glu"
 let io = import! "std/io.glu"
 let list = import! "std/list.glu"
 let function = import! "std/function.glu"

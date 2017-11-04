@@ -248,6 +248,7 @@ let edge_condition edge =
 
     loader = {
         elf = {
+            architecture = falcon_loader_prim.elf_architecture
             base_address = falcon_loader_prim.elf_base_address,
             from_file = falcon_loader_prim.elf_from_file,
             function_entries = falcon_loader_prim.elf_function_entries,

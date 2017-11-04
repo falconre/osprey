@@ -5,9 +5,9 @@ use gluon::vm::thread::{Traverseable};
 use gluon;
 use std::path::Path;
 
-use bindings::il;
-use bindings::memory;
-use bindings::types;
+use il;
+use memory;
+use types;
 
 falcon_type_wrapper!(falcon::loader::elf::Elf, LoaderElf);
 
@@ -64,6 +64,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();
 
     vm.define_global("falcon_loader_prim", record! {
+        elf_architecture => primitive!(1 elf_architecture),
         elf_base_address => primitive!(1 elf_base_address),
         elf_from_file => primitive!(1 elf_from_file),
         elf_function_entries => primitive!(1 elf_function_entries),

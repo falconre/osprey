@@ -1,13 +1,5 @@
-#![allow(dead_code)]
-#![recursion_limit="128"]
-
 extern crate clap;
-extern crate gluon;
-#[macro_use]
-extern crate gluon_vm;
-extern crate falcon;
-
-mod bindings;
+extern crate osprey;
 
 use std::fs::File;
 use std::io::Read;
@@ -30,7 +22,7 @@ fn osprey () {
     let mut script = String::new();
     fh.read_to_string(&mut script).unwrap();
 
-    let _ = bindings::run_code(&script);
+    let _ = osprey::run_code(&script);
 }
 
 

@@ -12,3 +12,7 @@ gluon_vm = "0.6.2"
 [[bin]]
 name = "osprey"
 path = "src/main.rs"
+
+[lib]
+name = "osprey"
+path = "lib/lib.rs"

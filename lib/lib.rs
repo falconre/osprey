@@ -1,6 +1,11 @@
-use gluon;
+#![recursion_limit="128"]
+
+extern crate gluon;
+#[macro_use]
+extern crate gluon_vm;
+extern crate falcon;
+
 use gluon::vm::api::{IO};
-use std;
 
 
 #[macro_use]

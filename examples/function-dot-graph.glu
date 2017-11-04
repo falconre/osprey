@@ -20,7 +20,7 @@ let unwrap option =
 
 
 // Import the falcon library
-let falcon = import! "lib/falcon.glu"
+let falcon = import! "scripts/falcon.glu"
 let { il, loader } = falcon
 
 
