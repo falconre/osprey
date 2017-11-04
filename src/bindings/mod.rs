@@ -16,7 +16,7 @@ macro_rules! falcon_type_wrapper {
 
 mod il;
 mod loader;
-mod symbolic;
+mod memory;
 mod types;
 
 
@@ -49,14 +49,21 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
 }
 
 
+pub fn attach_bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
+    // The order is important
+    let vm = bindings(vm);
+    let vm = il::bindings(vm);
+    let vm = memory::bindings(vm);
+    let vm = loader::bindings(vm);
+    let vm = types::bindings(vm);
+    vm
+}
+
+
 pub fn run_code(code: &str) -> gluon::RootedThread {
     let vm = gluon::new_vm();
 
-    let vm = bindings(vm);
-    let vm = il::bindings(vm);
-    let vm = loader::bindings(vm);
-    let vm = symbolic::bindings(vm);
-    let vm = types::bindings(vm);
+    let vm = attach_bindings(vm);
 
     let mut compiler = gluon::Compiler::new();
     match compiler.run_io_expr::<IO<()>>(&vm, "code", code) {

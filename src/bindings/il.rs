@@ -251,8 +251,7 @@ fn operation_type(operation: &IlOperation) -> String {
         falcon::il::Operation::Store  { .. } => "store",
         falcon::il::Operation::Load   { .. } => "load",
         falcon::il::Operation::Brc    { .. } => "brc",
-        falcon::il::Operation::Raise  { .. } => "raise",
-        falcon::il::Operation::Phi    { .. } => "phi"
+        falcon::il::Operation::Raise  { .. } => "raise"
     }.to_string()
 }
 

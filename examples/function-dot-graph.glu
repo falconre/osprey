@@ -25,8 +25,15 @@ let { il, loader } = falcon
 
 
 // Arguments to our script
-let filename = falcon.env "FILENAME" |> unwrap
-let function_name = falcon.env "FUNCTION_NAME" |> unwrap
+let filename =
+    match falcon.env "FILENAME" with
+    | Some filename -> filename
+    | None -> error "Could not get filename"
+
+let function_name = 
+    match falcon.env "FUNCTION_NAME" with
+    | Some function_name -> function_name
+    | None -> "Could not get function name"
 
 
 // Load the elf

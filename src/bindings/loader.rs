@@ -5,8 +5,9 @@ use gluon::vm::thread::{Traverseable};
 use gluon;
 use std::path::Path;
 
-use bindings::types;
 use bindings::il;
+use bindings::memory;
+use bindings::types;
 
 falcon_type_wrapper!(falcon::loader::elf::Elf, LoaderElf);
 
@@ -30,8 +31,8 @@ fn elf_function_entries(elf: &LoaderElf) -> Vec<LoaderFunctionEntry> {
         .collect::<Vec<LoaderFunctionEntry>>()
 }
 
-fn elf_memory(elf: &LoaderElf) -> LoaderMemory {
-    LoaderMemory { x: elf.x.memory().unwrap() }
+fn elf_memory(elf: &LoaderElf) -> memory::BackingMemory {
+    memory::BackingMemory { x: elf.x.memory().unwrap() }
 }
 
 fn elf_function(elf: &LoaderElf, address: u64) -> il::IlFunction {
@@ -56,18 +57,11 @@ fn function_entry_str(function_entry: &LoaderFunctionEntry) -> String {
     format!("{}", function_entry.x)
 }
 
-falcon_type_wrapper!(falcon::loader::memory::Memory, LoaderMemory);
-
-
-falcon_type_wrapper!(falcon::executor::engine::Engine, ExecutorEngine);
-falcon_type_wrapper!(falcon::executor::memory::Memory, ExecutorMemory);
-
 
 pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
 
     vm.register_type::<LoaderElf>("LoaderElf", &[]).unwrap();
     vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();
-    vm.register_type::<LoaderMemory>("LoaderMemory", &[]).unwrap();
 
     vm.define_global("falcon_loader_prim", record! {
         elf_base_address => primitive!(1 elf_base_address),

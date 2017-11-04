@@ -14,6 +14,13 @@ let { (==) } = string.eq
 let (++) = string_prim.append
 
 
+
+let unwrap option = 
+    match option with
+    | Some x -> x
+    | None -> error "unwrapped option with value None"
+
+
 type Expression = | Scalar   IlScalar
                   | Constant IlConstant
                   | Add      IlExpression IlExpression
@@ -115,17 +122,21 @@ type FunctionLocation = | Instruction IlBlock IlInstruction
                         | Edge IlEdge
                         | EmptyBlock IlBlock
 
-let function_location_match function_location =
+let function_location_match function_location function =
     let fl = function_location
     let fip = falcon_il_prim
     let typ = fip.function_location_type fl
 
     if typ == "instruction" then
-        Instruction (fip.function_location_block fl |> unwrap) (fip.function_location_instruction fl |> unwrap)
+        let block = fip.function_location_block fl function |> unwrap
+        let instruction = fip.function_location_instruction fl function |> unwrap
+        Instruction block instruction
     else if typ == "edge" then
-        Edge (fip.function_location_edge fl |> unwrap)
+        Edge (fip.function_location_edge fl function |> unwrap)
     else if typ == "empty_block" then
-        EmptyBlock (fip.function_location_block fl |> unwrap)
+        EmptyBlock (fip.function_location_block fl function |> unwrap)
+    else
+        error ("bad function_location type" ++ typ)
 
 
 let edge_condition edge =
@@ -204,7 +215,7 @@ let edge_condition edge =
 
         function_location = {
             match_ = function_location_match
-        }
+        },
 
         instruction = {
             index = falcon_il_prim.instruction_index,
@@ -223,7 +234,7 @@ let edge_condition edge =
         },
 
         program_location = {
-            from_address = falcon_il_prim.program_location_from_address
+            from_address = falcon_il_prim.program_location_from_address,
             function_location = falcon_il_prim.program_location_function_location
         },
 
