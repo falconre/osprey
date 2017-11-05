@@ -58,7 +58,7 @@ fn function_entry_str(function_entry: &LoaderFunctionEntry) -> String {
 }
 
 
-pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
+pub fn bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
 
     vm.register_type::<LoaderElf>("LoaderElf", &[]).unwrap();
     vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();

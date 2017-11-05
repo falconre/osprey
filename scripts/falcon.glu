@@ -128,13 +128,13 @@ let function_location_match function_location function =
     let typ = fip.function_location_type fl
 
     if typ == "instruction" then
-        let block = fip.function_location_block fl function |> unwrap
-        let instruction = fip.function_location_instruction fl function |> unwrap
+        let block = fip.function_location_block_get fl function |> unwrap
+        let instruction = fip.function_location_instruction_get fl function |> unwrap
         Instruction block instruction
     else if typ == "edge" then
-        Edge (fip.function_location_edge fl function |> unwrap)
+        Edge (fip.function_location_edge_get fl function |> unwrap)
     else if typ == "empty_block" then
-        EmptyBlock (fip.function_location_block fl function |> unwrap)
+        EmptyBlock (fip.function_location_block_get fl function |> unwrap)
     else
         error ("bad function_location type" ++ typ)
 
@@ -170,10 +170,11 @@ let edge_condition edge =
         },
 
         constant = {
-            new = falcon_il_prim.constant_new,
-            value = falcon_il_prim.constant_value,
             bits = falcon_il_prim.constant_bits,
-            str = falcon_il_prim.constant_str
+            format = falcon_il_prim.constant_format,
+            new = falcon_il_prim.constant_new,
+            str = falcon_il_prim.constant_str,
+            value = falcon_il_prim.constant_value,
         },
 
         edge = {
@@ -184,6 +185,7 @@ let edge_condition edge =
         },
 
         expression = {
+            format = falcon_il_prim.expression_format,
             scalar = falcon_il_prim.expression_scalar,
             constant = falcon_il_prim.expression_constant,
             add = falcon_il_prim.expression_add,
@@ -210,20 +212,30 @@ let edge_condition edge =
         },
 
         function = {
-            control_flow_graph = falcon_il_prim.function_control_flow_graph
+            address = falcon_il_prim.function_address,
+            block = falcon_il_prim.function_block,
+            blocks = falcon_il_prim.function_blocks,
+            control_flow_graph = falcon_il_prim.function_control_flow_graph,
+            index = falcon_il_prim.function_index,
+            name = falcon_il_prim.function_name
         },
 
         function_location = {
+            edge = falcon_il_prim.function_location_edge,
+            empty_block = falcon_il_prim.function_location_empty_block,
+            instruction = falcon_il_prim.function_location_instruction,
             match_ = function_location_match
         },
 
         instruction = {
+            format = falcon_il_prim.instruction_format,
             index = falcon_il_prim.instruction_index,
             operation = falcon_il_prim.instruction_operation,
             str = falcon_il_prim.instruction_str
         },
 
         operation = {
+            format = falcon_il_prim.operation_format,
             assign = falcon_il_prim.operation_assign,
             store = falcon_il_prim.operation_store,
             load = falcon_il_prim.operation_load,
@@ -233,22 +245,32 @@ let edge_condition edge =
             str = falcon_il_prim.operation_str
         },
 
+        program = {
+            format = falcon_il_prim.program_location_format,
+            function_by_address = falcon_il_prim.program_function_by_address,
+            functions = falcon_il_prim.program_functions,
+            new = falcon_il_prim.program_new
+        },
+
         program_location = {
+            format = falcon_il_prim.program_location_format,
             from_address = falcon_il_prim.program_location_from_address,
-            function_location = falcon_il_prim.program_location_function_location
+            function_location = falcon_il_prim.program_location_function_location,
+            new = falcon_il_prim.program_location_new,
         },
 
         scalar = {
+            format = falcon_il_prim.scalar_format,
+            bits = falcon_il_prim.scalar_bits,
             new = falcon_il_prim.scalar_new,
             name = falcon_il_prim.scalar_name,
-            bits = falcon_il_prim.scalar_bits,
             str = falcon_il_prim.scalar_str
         }
     },
 
     loader = {
         elf = {
-            architecture = falcon_loader_prim.elf_architecture
+            architecture = falcon_loader_prim.elf_architecture,
             base_address = falcon_loader_prim.elf_base_address,
             from_file = falcon_loader_prim.elf_from_file,
             function_entries = falcon_loader_prim.elf_function_entries,

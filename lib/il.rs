@@ -11,6 +11,10 @@ fn constant_new(value: u64, bits: usize) -> IlConstant {
     IlConstant { x: falcon::il::Constant::new(value, bits) }
 }
 
+fn constant_format(constant: &IlConstant) -> String {
+    format!("{}", constant.x)
+}
+
 fn constant_value(constant: &IlConstant) -> u64 {
     constant.x.value()
 }
@@ -28,6 +32,10 @@ falcon_type_wrapper!(falcon::il::Scalar, IlScalar);
 
 fn scalar_new(name: String, bits: usize) -> IlScalar {
     IlScalar { x: falcon::il::Scalar::new(name, bits) }
+}
+
+fn scalar_format(scalar: &IlScalar) -> String {
+    format!("{}", scalar.x)
 }
 
 fn scalar_name(scalar: &IlScalar) -> &str {
@@ -49,6 +57,10 @@ fn array_new(name: String, size: u64) -> IlArray {
     IlArray { x: falcon::il::Array::new(name, size) }
 }
 
+fn array_format(array: &IlArray) -> String {
+    format!("{}", array.x)
+}
+
 fn array_name(array: &IlArray) -> &str {
     array.x.name()
 }
@@ -66,6 +78,10 @@ falcon_type_wrapper!(falcon::il::MultiVar, IlMultiVar);
 
 
 falcon_type_wrapper!(falcon::il::Expression, IlExpression);
+
+fn expression_format(expression: &IlExpression) -> String {
+    format!("{}", expression.x)
+}
 
 fn expression_scalar(scalar: &IlScalar) -> IlExpression {
     IlExpression {
@@ -225,6 +241,10 @@ fn expression_str(expr: &IlExpression) -> String {
 
 falcon_type_wrapper!(falcon::il::Operation, IlOperation);
 
+fn operation_format(operation: &IlOperation) -> String {
+    format!("{}", operation.x)
+}
+
 fn operation_assign(dst: &IlScalar, src: &IlExpression) -> IlOperation {
     IlOperation { x: falcon::il::Operation::assign(dst.x.clone(), src.x.clone()) }
 }
@@ -338,6 +358,10 @@ fn operation_str(operation: &IlOperation) -> String {
 
 
 falcon_type_wrapper!(falcon::il::Instruction, IlInstruction);
+
+fn instruction_format(instruction: &IlInstruction) -> String {
+    format!("{}", instruction.x)
+}
 
 fn instruction_operation(instruction: &IlInstruction) -> IlOperation {
     IlOperation { x: instruction.x.operation().clone() }
@@ -468,6 +492,29 @@ fn function_control_flow_graph(function: &IlFunction) -> IlControlFlowGraph {
     }
 }
 
+fn function_index(function: &IlFunction) -> Option<u64> {
+    function.x.index()
+}
+
+fn function_name(function: &IlFunction) -> String {
+    function.x.name().to_string()
+}
+
+fn function_address(function: &IlFunction) -> u64 {
+    function.x.address()
+}
+
+fn function_blocks(function: &IlFunction) -> Vec<IlBlock> {
+    function.x.blocks().iter().map(|b| IlBlock { x: (*b).clone() }).collect()
+}
+
+fn function_block(function: &IlFunction, index: i32) -> Option<IlBlock> {
+    match function.x.block(index as u64) {
+        Some(block) => Some(IlBlock { x: block.clone() }),
+        None => None
+    }
+}
+
 
 falcon_type_wrapper!(falcon::il::Program, IlProgram);
 
@@ -475,8 +522,25 @@ fn program_new() -> IlProgram {
     IlProgram { x: falcon::il::Program::new() }
 }
 
+fn program_functions(program: &IlProgram) -> Vec<IlFunction> {
+    program.x.functions().iter().map(|f| IlFunction { x: (*f).clone() }).collect()
+}
+
+fn program_function_by_address(program: &IlProgram, address: u64)
+    -> Option<IlFunction> {
+
+    match program.x.function_by_address(address) {
+        Some(function) => Some(IlFunction { x: function.clone() }),
+        None => None
+    }
+}
+
 
 falcon_type_wrapper!(falcon::il::ProgramLocation, IlProgramLocation);
+
+fn program_location_format(program_location: &IlProgramLocation) -> String {
+    format!("{}", program_location.x)
+}
 
 fn program_location_from_address(program: &IlProgram, address: u64) -> IlProgramLocation {
     IlProgramLocation {
@@ -490,6 +554,13 @@ fn program_location_function_location(program_location: &IlProgramLocation) -> I
     }
 }
 
+fn program_location_new(function: &IlFunction, function_location: &IlFunctionLocation)
+    -> IlProgramLocation {
+
+    let pl = falcon::il::ProgramLocation::new(function.x.index(), function_location.x.clone());
+    IlProgramLocation { x: pl }
+}
+
 
 falcon_type_wrapper!(falcon::il::FunctionLocation, IlFunctionLocation);
 
@@ -501,7 +572,7 @@ fn function_location_type(function_location: &IlFunctionLocation) -> String {
     }.to_string()
 }
 
-fn function_location_instruction(function_location: &IlFunctionLocation, function: &IlFunction)
+fn function_location_instruction_get(function_location: &IlFunctionLocation, function: &IlFunction)
 -> Option<IlInstruction> {
 
     if let Some(ref_function_location) = function_location.x.apply(&function.x) {
@@ -512,7 +583,7 @@ fn function_location_instruction(function_location: &IlFunctionLocation, functio
     None
 }
 
-fn function_location_edge(function_location: &IlFunctionLocation, function: &IlFunction)
+fn function_location_edge_get(function_location: &IlFunctionLocation, function: &IlFunction)
 -> Option<IlEdge> {
 
     if let Some(ref_function_location) = function_location.x.apply(&function.x) {
@@ -523,7 +594,7 @@ fn function_location_edge(function_location: &IlFunctionLocation, function: &IlF
     None
 }
 
-fn function_location_block(function_location: &IlFunctionLocation, function: &IlFunction)
+fn function_location_block_get(function_location: &IlFunctionLocation, function: &IlFunction)
 -> Option<IlBlock> {
 
     if let Some(ref_function_location) = function_location.x.apply(&function.x) {
@@ -532,6 +603,25 @@ fn function_location_block(function_location: &IlFunctionLocation, function: &Il
         }
     }
     None
+}
+
+fn function_location_instruction(block: &IlBlock, instruction: &IlInstruction)
+-> IlFunctionLocation {
+    let block = block.x.index();
+    let instruction = instruction.x.index();
+    let fl = falcon::il::FunctionLocation::Instruction(block, instruction);
+    IlFunctionLocation { x: fl }
+}
+
+fn function_location_edge(edge: &IlEdge) -> IlFunctionLocation {
+    let head = edge.x.head();
+    let tail = edge.x.tail();
+    IlFunctionLocation { x: falcon::il::FunctionLocation::Edge(head, tail) }
+}
+
+fn function_location_empty_block(block: &IlBlock) -> IlFunctionLocation {
+    let fl = falcon::il::FunctionLocation::EmptyBlock(block.x.index());
+    IlFunctionLocation { x : fl }
 }
 
 
@@ -553,6 +643,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlFunctionLocation>("IlFunctionLocation", &[]).unwrap();
 
     vm.define_global("falcon_il_prim", record! {
+        array_format => primitive!(1 array_format),
         array_new => primitive!(2 array_new),
         array_name => primitive!(1 array_name),
         array_size => primitive!(1 array_size),
@@ -565,10 +656,11 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         block_brc => primitive!(3 block_brc),
         block_raise => primitive!(2 block_raise),
         block_str => primitive!(1 block_str),
-        constant_new => primitive!(2 constant_new),
         constant_bits => primitive!(1 constant_bits),
-        constant_value => primitive!(1 constant_value),
+        constant_format => primitive!(1 constant_format),
+        constant_new => primitive!(2 constant_new),
         constant_str => primitive!(1 constant_str),
+        constant_value => primitive!(1 constant_value),
         control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
         control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
         control_flow_graph_edges => primitive!(1 control_flow_graph_edges),
@@ -578,6 +670,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         edge_head => primitive!(1 edge_head),
         edge_tail => primitive!(1 edge_tail),
         edge_str => primitive!(1 edge_str),
+        expression_format => primitive!(1 expression_format),
         expression_scalar => primitive!(1 expression_scalar),
         expression_constant => primitive!(1 expression_constant),
         expression_add => primitive!(2 expression_add),
@@ -606,14 +699,24 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         expression_get_rhs => primitive!(1 expression_get_rhs),
         expression_get_bits => primitive!(1 expression_get_bits),
         expression_str => primitive!(1 expression_str),
+        function_address => primitive!(1 function_address),
+        function_block => primitive!(2 function_block),
+        function_blocks => primitive!(1 function_blocks),
         function_control_flow_graph => primitive!(1 function_control_flow_graph),
+        function_index => primitive!(1 function_index),
+        function_name => primitive!(1 function_name),
         function_location_type => primitive!(1 function_location_type),
         function_location_instruction => primitive!(2 function_location_instruction),
-        function_location_edge => primitive!(2 function_location_edge),
-        function_location_block => primitive!(2 function_location_block),
+        function_location_edge => primitive!(1 function_location_edge),
+        function_location_empty_block => primitive!(1 function_location_empty_block),
+        function_location_instruction_get => primitive!(2 function_location_instruction_get),
+        function_location_edge_get => primitive!(2 function_location_edge_get),
+        function_location_block_get => primitive!(2 function_location_block_get),
+        instruction_format => primitive!(1 instruction_format),
         instruction_index => primitive!(1 instruction_index),
         instruction_operation => primitive!(1 instruction_operation),
         instruction_str => primitive!(1 instruction_str),
+        operation_format => primitive!(1 operation_format),
         operation_assign => primitive!(2 operation_assign),
         operation_store => primitive!(3 operation_store),
         operation_load => primitive!(3 operation_load),
@@ -632,12 +735,17 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         operation_brc_condition => primitive!(1 operation_brc_condition),
         operation_raise_expr => primitive!(1 operation_raise_expr),
         operation_str => primitive!(1 operation_str),
+        program_function_by_address => primitive!(2 program_function_by_address),
+        program_functions => primitive!(1 program_functions),
         program_new => primitive!(0 program_new),
+        program_location_format => primitive!(1 program_location_format),
+        program_location_new => primitive!(2 program_location_new),
         program_location_from_address => primitive!(2 program_location_from_address),
         program_location_function_location => primitive!(1 program_location_function_location),
-        scalar_new => primitive!(2 scalar_new),
-        scalar_name => primitive!(1 scalar_name),
         scalar_bits => primitive!(1 scalar_bits),
+        scalar_format => primitive!(1 scalar_format),
+        scalar_name => primitive!(1 scalar_name),
+        scalar_new => primitive!(2 scalar_new),
         scalar_str => primitive!(1 scalar_str)
     }).unwrap();
 

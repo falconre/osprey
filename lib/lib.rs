@@ -11,7 +11,7 @@ use gluon::vm::api::{IO};
 #[macro_use]
 macro_rules! falcon_type_wrapper {
     ($p: path, $n: ident) => {
-        #[derive(Clone, Debug)] pub(crate) struct $n { pub(crate) x: $p }
+        #[derive(Clone, Debug)] pub struct $n { pub x: $p }
         impl VmType for $n { type Type = $n; }
         impl Traverseable for $n {}
         impl Userdata for $n {}
@@ -19,10 +19,10 @@ macro_rules! falcon_type_wrapper {
 }
 
 
-mod il;
-mod loader;
-mod memory;
-mod types;
+pub mod il;
+pub mod loader;
+pub mod memory;
+pub mod types;
 
 
 pub fn hex(v: u64) -> String {
@@ -59,8 +59,8 @@ pub fn attach_bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
     let vm = bindings(vm);
     let vm = il::bindings(vm);
     let vm = memory::bindings(vm);
-    let vm = loader::bindings(vm);
     let vm = types::bindings(vm);
+    let vm = loader::bindings(vm);
     vm
 }
 
@@ -71,7 +71,7 @@ pub fn run_code(code: &str) -> gluon::RootedThread {
     let vm = attach_bindings(vm);
 
     let mut compiler = gluon::Compiler::new();
-    match compiler.run_io_expr::<IO<()>>(&vm, "code", code) {
+    match compiler.run_expr::<IO<()>>(&vm, "code", code) {
         Ok(r) => r,
         Err(e) => {
             println!("{}", e);
