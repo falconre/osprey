@@ -5,9 +5,9 @@ authors = [ "Alex Eubanks <endeavor@rainbowsandpwnies.com>" ]
 
 [dependencies]
 clap = "2.26"
-falcon = { git = "https://github.com/falconre/falcon", rev="e1deaa3691878b37d3d38", features=["thread_safe"] }
-gluon = "0.6.2"
-gluon_vm = "0.6.2"
+falcon = { git = "https://github.com/falconre/falcon", rev="cf1327f1aa210665ea", features=["thread_safe"] }
+gluon = { git = "https://github.com/gluon-lang/gluon", rev = "3f78fe2ddc2ed06f5c099" }
+gluon_vm = { git = "https://github.com/gluon-lang/gluon", rev = "3f78fe2ddc2ed06f5c099"  }
 
 [[bin]]
 name = "osprey"

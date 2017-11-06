@@ -25,7 +25,7 @@ pub mod memory;
 pub mod types;
 
 
-pub fn hex(v: u64) -> String {
+fn hex(v: u64) -> String {
     format!("{:x}", v)
 }
 
@@ -35,7 +35,7 @@ fn println(string: String) {
 }
 
 
-pub fn env (name: String) -> Option<String> {
+fn env (name: String) -> Option<String> {
     match std::env::var(&name) {
         Ok(v) => Some(v),
         Err(_) => None
