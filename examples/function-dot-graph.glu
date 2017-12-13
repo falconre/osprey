@@ -68,4 +68,4 @@ let output =
         let cfg = il.function.control_flow_graph function
         il.control_flow_graph.dot_graph cfg
 
-io.println output
+falcon.println output

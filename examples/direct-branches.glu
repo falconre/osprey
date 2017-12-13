@@ -92,14 +92,14 @@ let function_name =
 
 let brc_is_direct instruction : IlInstruction -> Bool =
     match il.instruction.operation instruction |> il.operation.match_ with
-    | Brc target _ -> all_constants target
+    | Branch target -> all_constants target
     | _ -> error "brc_is_direct given non-brc instruction"
 
 
 let find_brcs function : IlFunction -> List IlInstruction =
     let is_brc i =
         match il.operation.match_ (il.instruction.operation i) with
-        | Brc target condition -> Some i
+        | Branch target -> Some i
         | _ -> None
 
     let control_flow_graph = il.function.control_flow_graph function
@@ -126,7 +126,11 @@ let find_function elf function_name =
 
 let elf = loader.elf.from_file filename
 
-let function_entry = find_function elf function_name |> unwrap
+let function_entry =
+    match find_function elf function_name with
+    | Some function_entry -> function_entry
+    | None -> error "failed to find function entry"
+    
 let function = loader.function_entry.address function_entry |> loader.elf.function elf
 
 let brcs = find_brcs function |> filter brc_is_direct
@@ -134,4 +138,4 @@ let strings = map il.instruction.str brcs
 
 let lines = foldl (\ l r -> l ++ "\n" ++ r) "" strings
 
-io.println lines
+falcon.println lines

@@ -5,8 +5,6 @@ extern crate gluon;
 extern crate gluon_vm;
 extern crate falcon;
 
-use gluon::vm::api::{IO};
-
 
 #[macro_use]
 macro_rules! falcon_type_wrapper {
@@ -71,7 +69,7 @@ pub fn run_code(code: &str) -> gluon::RootedThread {
     let vm = attach_bindings(vm);
 
     let mut compiler = gluon::Compiler::new();
-    match compiler.run_expr::<IO<()>>(&vm, "code", code) {
+    match compiler.run_expr::<()>(&vm, "code", code) {
         Ok(r) => r,
         Err(e) => {
             println!("{}", e);

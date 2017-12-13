@@ -9,12 +9,12 @@ use il;
 use memory;
 use types;
 
-falcon_type_wrapper!(falcon::loader::elf::Elf, LoaderElf);
+falcon_type_wrapper!(falcon::loader::Elf, LoaderElf);
 
 fn elf_from_file(filename: String) -> LoaderElf {
     let path = Path::new(&filename);
     LoaderElf {
-        x: falcon::loader::elf::Elf::from_file(&path).unwrap()
+        x: falcon::loader::Elf::from_file(&path).unwrap()
     }
 }
 

@@ -51,32 +51,6 @@ fn scalar_str(scalar: &IlScalar) -> String {
 }
 
 
-falcon_type_wrapper!(falcon::il::Array, IlArray);
-
-fn array_new(name: String, size: u64) -> IlArray {
-    IlArray { x: falcon::il::Array::new(name, size) }
-}
-
-fn array_format(array: &IlArray) -> String {
-    format!("{}", array.x)
-}
-
-fn array_name(array: &IlArray) -> &str {
-    array.x.name()
-}
-
-fn array_size(array: &IlArray) -> u64 {
-    array.x.size()
-}
-
-fn array_str(array: &IlArray) -> String {
-    format!("{}", array.x)
-}
-
-
-falcon_type_wrapper!(falcon::il::MultiVar, IlMultiVar);
-
-
 falcon_type_wrapper!(falcon::il::Expression, IlExpression);
 
 fn expression_format(expression: &IlExpression) -> String {
@@ -249,16 +223,16 @@ fn operation_assign(dst: &IlScalar, src: &IlExpression) -> IlOperation {
     IlOperation { x: falcon::il::Operation::assign(dst.x.clone(), src.x.clone()) }
 }
 
-fn operation_store(dst: &IlArray, index: &IlExpression, src: &IlExpression) -> IlOperation {
-    IlOperation { x: falcon::il::Operation::store(dst.x.clone(), index.x.clone(), src.x.clone()) }
+fn operation_store(index: &IlExpression, src: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::store(index.x.clone(), src.x.clone()) }
 }
 
-fn operation_load(dst: &IlScalar, index: &IlExpression, src: &IlArray) -> IlOperation {
-    IlOperation { x: falcon::il::Operation::load(dst.x.clone(), index.x.clone(), src.x.clone()) }
+fn operation_load(dst: &IlScalar, index: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::load(dst.x.clone(), index.x.clone()) }
 }
 
-fn operation_brc(target: &IlExpression, condition: &IlExpression) -> IlOperation {
-    IlOperation { x: falcon::il::Operation::brc(target.x.clone(), condition.x.clone()) }
+fn operation_branch(target: &IlExpression) -> IlOperation {
+    IlOperation { x: falcon::il::Operation::branch(target.x.clone()) }
 }
 
 fn operation_raise(expr: &IlExpression) -> IlOperation {
@@ -270,7 +244,7 @@ fn operation_type(operation: &IlOperation) -> String {
         falcon::il::Operation::Assign { .. } => "assign",
         falcon::il::Operation::Store  { .. } => "store",
         falcon::il::Operation::Load   { .. } => "load",
-        falcon::il::Operation::Brc    { .. } => "brc",
+        falcon::il::Operation::Branch { .. } => "branch",
         falcon::il::Operation::Raise  { .. } => "raise"
     }.to_string()
 }
@@ -286,13 +260,6 @@ fn operation_assign_src(operation: &IlOperation) -> IlExpression {
     match operation.x {
         falcon::il::Operation::Assign {ref src, ..} => IlExpression { x: src.clone() },
         _ => panic!("operation_assign_src called on non-assign op")
-    }
-}
-
-fn operation_store_dst(operation: &IlOperation) -> IlArray {
-    match operation.x {
-        falcon::il::Operation::Store {ref dst, ..} => IlArray { x: dst.clone() },
-        _ => panic!("operation_store_dst called on non-store op")
     }
 }
 
@@ -324,24 +291,11 @@ fn operation_load_index(operation: &IlOperation) -> IlExpression {
     }
 }
 
-fn operation_load_src(operation: &IlOperation) -> IlArray {
+fn operation_branch_target(operation: &IlOperation) -> IlExpression {
     match operation.x {
-        falcon::il::Operation::Load {ref src, ..} => IlArray { x: src.clone() },
-        _ => panic!("operation_load_src called on non-load op")
-    }
-}
-
-fn operation_brc_target(operation: &IlOperation) -> IlExpression {
-    match operation.x {
-        falcon::il::Operation::Brc {ref target, ..} => IlExpression { x: target.clone() },
+        falcon::il::Operation::Branch {ref target, ..} =>
+            IlExpression { x: target.clone() },
         _ => panic!("operation_brc_target called on non-brc op")
-    }
-}
-
-fn operation_brc_condition(operation: &IlOperation) -> IlExpression {
-    match operation.x {
-        falcon::il::Operation::Brc {ref condition, ..} => IlExpression { x: condition.clone() },
-        _ => panic!("operation_brc_condition called on non-brc op")
     }
 }
 
@@ -358,6 +312,10 @@ fn operation_str(operation: &IlOperation) -> String {
 
 
 falcon_type_wrapper!(falcon::il::Instruction, IlInstruction);
+
+fn instruction_address(instruction: &IlInstruction) -> Option<u64> {
+    instruction.x.address().clone()
+}
 
 fn instruction_format(instruction: &IlInstruction) -> String {
     format!("{}", instruction.x)
@@ -396,21 +354,21 @@ fn block_assign(block: &IlBlock, dst: &IlScalar, src: &IlExpression) -> IlBlock 
     block
 }
 
-fn block_store(block: &IlBlock, dst: &IlArray, index: &IlExpression, src: &IlExpression) -> IlBlock {
+fn block_store(block: &IlBlock, index: &IlExpression, src: &IlExpression) -> IlBlock {
     let mut block = block.clone();
-    block.x.store(dst.x.clone(), index.x.clone(), src.x.clone());
+    block.x.store(index.x.clone(), src.x.clone());
     block
 }
 
-fn block_load(block: &IlBlock, dst: &IlScalar, index: &IlExpression, src: &IlArray) -> IlBlock {
+fn block_load(block: &IlBlock, dst: &IlScalar, index: &IlExpression) -> IlBlock {
     let mut block = block.clone();
-    block.x.load(dst.x.clone(), index.x.clone(), src.x.clone());
+    block.x.load(dst.x.clone(), index.x.clone());
     block
 }
 
-fn block_brc(block: &IlBlock, target: &IlExpression, condition: &IlExpression) -> IlBlock {
+fn block_branch(block: &IlBlock, target: &IlExpression) -> IlBlock {
     let mut block = block.clone();
-    block.x.brc(target.x.clone(), condition.x.clone());
+    block.x.branch(target.x.clone());
     block
 }
 
@@ -522,6 +480,15 @@ fn program_new() -> IlProgram {
     IlProgram { x: falcon::il::Program::new() }
 }
 
+fn program_function_by_name(program: &IlProgram, name: &str) -> Option<IlFunction> {
+    for function in program.x.functions() {
+        if function.name() == name {
+            return Some(IlFunction { x: function.clone() });
+        }
+    }
+    None
+}
+
 fn program_functions(program: &IlProgram) -> Vec<IlFunction> {
     program.x.functions().iter().map(|f| IlFunction { x: (*f).clone() }).collect()
 }
@@ -629,8 +596,6 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
 
     vm.register_type::<IlConstant>("IlConstant", &[]).unwrap();
     vm.register_type::<IlScalar>("IlScalar", &[]).unwrap();
-    vm.register_type::<IlArray>("IlArray", &[]).unwrap();
-    vm.register_type::<IlMultiVar>("IlMultiVar", &[]).unwrap();
     vm.register_type::<IlExpression>("IlExpression", &[]).unwrap();
     vm.register_type::<IlOperation>("IlOperation", &[]).unwrap();
     vm.register_type::<IlInstruction>("IlInstruction", &[]).unwrap();
@@ -643,17 +608,12 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlFunctionLocation>("IlFunctionLocation", &[]).unwrap();
 
     vm.define_global("falcon_il_prim", record! {
-        array_format => primitive!(1 array_format),
-        array_new => primitive!(2 array_new),
-        array_name => primitive!(1 array_name),
-        array_size => primitive!(1 array_size),
-        array_str => primitive!(1 array_str),
         block_index => primitive!(1 block_index),
         block_instructions => primitive!(1 block_instructions),
         block_assign => primitive!(3 block_assign),
-        block_store => primitive!(4 block_store),
-        block_load => primitive!(4 block_load),
-        block_brc => primitive!(3 block_brc),
+        block_store => primitive!(3 block_store),
+        block_load => primitive!(3 block_load),
+        block_branch => primitive!(2 block_branch),
         block_raise => primitive!(2 block_raise),
         block_str => primitive!(1 block_str),
         constant_bits => primitive!(1 constant_bits),
@@ -712,30 +672,29 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         function_location_instruction_get => primitive!(2 function_location_instruction_get),
         function_location_edge_get => primitive!(2 function_location_edge_get),
         function_location_block_get => primitive!(2 function_location_block_get),
+        instruction_address => primitive!(1 instruction_address),
         instruction_format => primitive!(1 instruction_format),
         instruction_index => primitive!(1 instruction_index),
         instruction_operation => primitive!(1 instruction_operation),
         instruction_str => primitive!(1 instruction_str),
         operation_format => primitive!(1 operation_format),
         operation_assign => primitive!(2 operation_assign),
-        operation_store => primitive!(3 operation_store),
-        operation_load => primitive!(3 operation_load),
-        operation_brc => primitive!(2 operation_brc),
+        operation_store => primitive!(2 operation_store),
+        operation_load => primitive!(2 operation_load),
+        operation_branch => primitive!(1 operation_branch),
         operation_raise => primitive!(1 operation_raise),
         operation_type => primitive!(1 operation_type),
         operation_assign_src => primitive!(1 operation_assign_src),
         operation_assign_dst => primitive!(1 operation_assign_dst),
-        operation_store_dst => primitive!(1 operation_store_dst),
         operation_store_index => primitive!(1 operation_store_index),
         operation_store_src => primitive!(1 operation_store_src),
         operation_load_dst => primitive!(1 operation_load_dst),
         operation_load_index => primitive!(1 operation_load_index),
-        operation_load_src => primitive!(1 operation_load_src),
-        operation_brc_target => primitive!(1 operation_brc_target),
-        operation_brc_condition => primitive!(1 operation_brc_condition),
+        operation_branch_target => primitive!(1 operation_branch_target),
         operation_raise_expr => primitive!(1 operation_raise_expr),
         operation_str => primitive!(1 operation_str),
         program_function_by_address => primitive!(2 program_function_by_address),
+        program_function_by_name => primitive!(2 program_function_by_name),
         program_functions => primitive!(1 program_functions),
         program_new => primitive!(0 program_new),
         program_location_format => primitive!(1 program_location_format),

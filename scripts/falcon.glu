@@ -95,9 +95,9 @@ let expression_match expression =
 
 
 type Operation = | Assign IlScalar IlExpression
-                 | Store  IlArray IlExpression IlExpression
-                 | Load   IlScalar IlExpression IlArray
-                 | Brc    IlExpression IlExpression
+                 | Store  IlExpression IlExpression
+                 | Load   IlScalar IlExpression
+                 | Branch IlExpression
                  | Raise  IlExpression
 
 let operation_match operation =
@@ -107,11 +107,11 @@ let operation_match operation =
     if typ == "assign" then
         Assign (fip.operation_assign_dst operation) (fip.operation_assign_src operation)
     else if typ == "store" then
-        Store (fip.operation_store_dst operation) (fip.operation_store_index operation) (fip.operation_store_src operation)
+        Store (fip.operation_store_index operation) (fip.operation_store_src operation)
     else if typ == "load" then
-        Load (fip.operation_load_dst operation) (fip.operation_load_index operation) (fip.operation_load_src operation)
-    else if typ == "brc" then
-        Brc (fip.operation_brc_target operation) (fip.operation_brc_condition operation)
+        Load (fip.operation_load_dst operation) (fip.operation_load_index operation)
+    else if typ == "branch" then
+        Branch (fip.operation_branch_target operation)
     else if typ == "raise" then
         Raise (fip.operation_raise_expr operation)
     else
@@ -157,7 +157,7 @@ let edge_condition edge =
             assign = falcon_il_prim.block_assign,
             store = falcon_il_prim.block_store,
             load = falcon_il_prim.block_load,
-            brc = falcon_il_prim.block_brc,
+            branch = falcon_il_prim.block_branch,
             raise = falcon_il_prim.block_raise,
             str = falcon_il_prim.block_str
         },
@@ -174,7 +174,7 @@ let edge_condition edge =
             format = falcon_il_prim.constant_format,
             new = falcon_il_prim.constant_new,
             str = falcon_il_prim.constant_str,
-            value = falcon_il_prim.constant_value,
+            value = falcon_il_prim.constant_value
         },
 
         edge = {
@@ -208,7 +208,7 @@ let edge_condition edge =
             sext = falcon_il_prim.expression_sext,
             trun = falcon_il_prim.expression_trun,
             match_ = expression_match,
-            str = falcon_il_prim.expression_str,
+            str = falcon_il_prim.expression_str
         },
 
         function = {
@@ -228,6 +228,7 @@ let edge_condition edge =
         },
 
         instruction = {
+            address = falcon_il_prim.instruction_address,
             format = falcon_il_prim.instruction_format,
             index = falcon_il_prim.instruction_index,
             operation = falcon_il_prim.instruction_operation,
@@ -239,7 +240,7 @@ let edge_condition edge =
             assign = falcon_il_prim.operation_assign,
             store = falcon_il_prim.operation_store,
             load = falcon_il_prim.operation_load,
-            brc = falcon_il_prim.operation_brc,
+            branch = falcon_il_prim.operation_branch,
             raise = falcon_il_prim.operation_raise,
             match_ = operation_match,
             str = falcon_il_prim.operation_str
@@ -248,6 +249,7 @@ let edge_condition edge =
         program = {
             format = falcon_il_prim.program_location_format,
             function_by_address = falcon_il_prim.program_function_by_address,
+            function_by_name = falcon_il_prim.program_function_by_name,
             functions = falcon_il_prim.program_functions,
             new = falcon_il_prim.program_new
         },
@@ -256,7 +258,7 @@ let edge_condition edge =
             format = falcon_il_prim.program_location_format,
             from_address = falcon_il_prim.program_location_from_address,
             function_location = falcon_il_prim.program_location_function_location,
-            new = falcon_il_prim.program_location_new,
+            new = falcon_il_prim.program_location_new
         },
 
         scalar = {
