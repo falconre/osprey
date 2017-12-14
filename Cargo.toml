@@ -2,6 +2,9 @@
 name = "osprey"
 version = "0.2.1"
 authors = [ "Alex Eubanks <endeavor@rainbowsandpwnies.com>" ]
+repository = "https://github.com/falconre/osprey"
+description = "Gluon bindings for Falcon"
+license = "Apache-2.0"
 
 [dependencies]
 clap = "2.26"
