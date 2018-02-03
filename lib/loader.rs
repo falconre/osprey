@@ -63,17 +63,24 @@ pub fn bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<LoaderElf>("LoaderElf", &[]).unwrap();
     vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();
 
-    vm.define_global("falcon_loader_prim", record! {
-        elf_architecture => primitive!(1 elf_architecture),
-        elf_base_address => primitive!(1 elf_base_address),
-        elf_from_file => primitive!(1 elf_from_file),
-        elf_function_entries => primitive!(1 elf_function_entries),
-        elf_function => primitive!(2 elf_function),
-        elf_memory => primitive!(1 elf_memory),
-        function_entry_name => primitive!(1 function_entry_name),
-        function_entry_address => primitive!(1 function_entry_address),
-        function_entry_str => primitive!(1 function_entry_str)
-    }).unwrap();
+    fn falcon_loader_prim_loader(vm: &gluon::Thread)
+        -> gluon::vm::Result<gluon::vm::ExternModule> {
+        
+        gluon::vm::ExternModule::new(vm, record! {
+            elf_architecture => primitive!(1 elf_architecture),
+            elf_base_address => primitive!(1 elf_base_address),
+            elf_from_file => primitive!(1 elf_from_file),
+            elf_function_entries => primitive!(1 elf_function_entries),
+            elf_function => primitive!(2 elf_function),
+            elf_memory => primitive!(1 elf_memory),
+            function_entry_name => primitive!(1 function_entry_name),
+            function_entry_address => primitive!(1 function_entry_address),
+            function_entry_str => primitive!(1 function_entry_str)
+        })
+    }
     
+    gluon::import::add_extern_module(
+        &vm, "falcon_loader_prim", falcon_loader_prim_loader);
+
     vm
 }

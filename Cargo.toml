@@ -9,8 +9,8 @@ license = "Apache-2.0"
 [dependencies]
 clap = "2.26"
 falcon = { version="0.2.1", features=["thread_safe"] }
-gluon = "0.6.2"
-gluon_vm = "0.6.2"
+gluon = "0.7.0"
+gluon_vm = "0.7.0"
 
 [[bin]]
 name = "osprey"

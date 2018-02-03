@@ -10,9 +10,12 @@ let test = import! "std/test.glu"
 let { assert } = test
 
 let string = import! "std/string.glu"
+let (++) = string.monoid.semigroup.append
 let { (==) } = string.eq
-let (++) = string_prim.append
 
+let falcon_prim = import! "falcon_prim"
+let falcon_il_prim = import! "falcon_il_prim"
+let falcon_loader_prim = import! "falcon_loader_prim"
 
 
 let unwrap option = 

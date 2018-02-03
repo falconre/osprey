@@ -1,4 +1,4 @@
-#![recursion_limit="128"]
+#![recursion_limit="256"]
 
 extern crate gluon;
 #[macro_use]
@@ -42,11 +42,17 @@ fn env (name: String) -> Option<String> {
 
 
 pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
-    vm.define_global("falcon_prim", record! {
-        hex => primitive!(1 hex),
-        println => primitive!(1 println),
-        env => primitive!(1 env)
-    }).unwrap();
+    fn falcon_prim_loader(vm: &gluon::Thread)
+        -> gluon::vm::Result<gluon::vm::ExternModule> {
+        
+        gluon::vm::ExternModule::new(vm, record! {
+            hex => primitive!(1 hex),
+            println => primitive!(1 println),
+            env => primitive!(1 env)
+        })
+    }
+
+    gluon::import::add_extern_module(&vm, "falcon_prim", falcon_prim_loader);
     
     vm
 }

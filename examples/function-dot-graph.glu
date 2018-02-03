@@ -3,15 +3,16 @@
 
 
 // Some standard boilerplate stuff for gluon
+let array = import! "std/array.glu"
+let function = import! "std/function.glu"
 let io = import! "std/io.glu"
 let option = import! "std/types.glu"
-let function = import! "std/function.glu"
 let { Option } = option
 let { (|>) } = function
 
 let string = import! "std/string.glu"
 let { (==) } = string.eq
-let (++) = string_prim.append
+let (++) = string.monoid.semigroup.append
 
 let unwrap option = 
     match option with
