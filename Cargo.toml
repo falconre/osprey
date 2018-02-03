@@ -1,6 +1,6 @@
 [package]
 name = "osprey"
-version = "0.2.1"
+version = "0.2.4"
 authors = [ "Alex Eubanks <endeavor@rainbowsandpwnies.com>" ]
 repository = "https://github.com/falconre/osprey"
 description = "Gluon bindings for Falcon"
@@ -8,7 +8,7 @@ license = "Apache-2.0"
 
 [dependencies]
 clap = "2.26"
-falcon = { version="0.2.1", features=["thread_safe"] }
+falcon = { version="0.2.4", features=["thread_safe"] }
 gluon = "0.7.0"
 gluon_vm = "0.7.0"
 
