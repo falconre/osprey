@@ -27,46 +27,49 @@ let { il, loader } = falcon
 
 // Arguments to our script
 let filename =
-    match falcon.env "FILENAME" with
-    | Some filename -> filename
-    | None -> error "Could not get filename"
+  match falcon.env "FILENAME" with
+  | Some filename -> filename
+  | None -> error "Could not get filename"
 
 let function_name = 
-    match falcon.env "FUNCTION_NAME" with
-    | Some function_name -> function_name
-    | None -> "Could not get function name"
+  match falcon.env "FUNCTION_NAME" with
+  | Some function_name -> function_name
+  | None -> "Could not get function name"
 
 
-// Load the elf
-let elf = loader.elf.from_file filename
+// Load the binary
+let binary =
+  match loader.loader.from_file filename with
+  | Some x -> x
+  | None -> error "Could not load binary"
 
 
 // Calls loader::Loader::function_entries() and walks the resulting entries until
 // an entry with desired name is found, and returns that
-let find_function elf function_name =
-    let find functions i name =
-        if i == (array.len functions) then
-            None
+let find_function binary function_name =
+  let find functions i name =
+    if i == (array.len functions) then
+      None
+    else
+      let function_entry = array.index functions i
+      match loader.function_entry.name function_entry with
+      | Some entry_name ->
+        if entry_name == name then
+          Some function_entry
         else
-            let function_entry = array.index functions i
-            match loader.function_entry.name function_entry with
-            | Some entry_name ->
-                if entry_name == name then
-                    Some function_entry
-                else
-                    find functions (i + 1) name
-            | None -> find functions (i + 1) name
-    find (loader.elf.function_entries elf) 0 function_name
+          find functions (i + 1) name
+      | None -> find functions (i + 1) name
+  find (loader.loader.function_entries binary) 0 function_name
 
 
 // If we found our target function, return the dot graph of the CFG.
 let output =
-    match find_function elf function_name with
-    | None -> "Could not find " ++ function_name
-    | Some function_entry -> 
-        let address = loader.function_entry.address function_entry
-        let function = loader.elf.function elf address
-        let cfg = il.function.control_flow_graph function
-        il.control_flow_graph.dot_graph cfg
+  match find_function binary function_name with
+  | None -> "Could not find " ++ function_name
+  | Some function_entry -> 
+    let address = loader.function_entry.address function_entry
+    let function = loader.loader.function binary address
+    let cfg = il.function.control_flow_graph function
+    il.control_flow_graph.dot_graph cfg
 
 falcon.println output

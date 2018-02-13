@@ -386,7 +386,7 @@ fn block_str(block: &IlBlock) -> String {
 falcon_type_wrapper!(falcon::il::Edge, IlEdge);
 
 fn edge_has_condition(edge: &IlEdge) -> bool {
-    if let Some(_) = *edge.x.condition() {
+    if let Some(_) = edge.x.condition() {
         true
     }
     else {
@@ -395,7 +395,7 @@ fn edge_has_condition(edge: &IlEdge) -> bool {
 }
 
 fn edge_condition(edge: &IlEdge) -> IlExpression {
-    IlExpression { x: edge.x.condition().clone().unwrap() }
+    IlExpression { x: edge.x.condition().clone().unwrap().clone() }
 }
 
 fn edge_head(edge: &IlEdge) -> u64 {
@@ -455,7 +455,7 @@ fn function_index(function: &IlFunction) -> Option<u64> {
 }
 
 fn function_name(function: &IlFunction) -> String {
-    function.x.name().to_string()
+    function.x.name()
 }
 
 fn function_address(function: &IlFunction) -> u64 {
@@ -490,7 +490,10 @@ fn program_function_by_name(program: &IlProgram, name: &str) -> Option<IlFunctio
 }
 
 fn program_functions(program: &IlProgram) -> Vec<IlFunction> {
-    program.x.functions().iter().map(|f| IlFunction { x: (*f).clone() }).collect()
+    program.x
+           .functions()
+           .into_iter()
+           .map(|f| IlFunction { x: f.clone() }).collect()
 }
 
 fn program_function_by_address(program: &IlProgram, address: u64)

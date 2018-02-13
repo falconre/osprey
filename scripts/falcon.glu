@@ -280,13 +280,35 @@ let edge_condition edge =
             from_file = falcon_loader_prim.elf_from_file,
             function_entries = falcon_loader_prim.elf_function_entries,
             function = falcon_loader_prim.elf_function,
-            memory = falcon_loader_prim.elf_memory
+            memory = falcon_loader_prim.elf_memory,
+            program = falcon_loader_prim.elf_program,
+            program_recursive = falcon_loader_prim.elf_program_recursive
         },
 
         function_entry = {
             name = falcon_loader_prim.function_entry_name,
             address = falcon_loader_prim.function_entry_address,
             str = falcon_loader_prim.function_entry_str
+        },
+
+        loader = {
+            architecture = falcon_loader_prim.loader_architecture,
+            from_file = falcon_loader_prim.loader_from_file,
+            function_entries = falcon_loader_prim.loader_function_entries,
+            function = falcon_loader_prim.loader_function,
+            memory = falcon_loader_prim.loader_memory,
+            program = falcon_loader_prim.loader_program,
+            program_recursive = falcon_loader_prim.loader_program_recursive,
+        },
+        
+        pe = {
+            architecture = falcon_loader_prim.pe_architecture,
+            from_file = falcon_loader_prim.pe_from_file,
+            function_entries = falcon_loader_prim.pe_function_entries,
+            function = falcon_loader_prim.pe_function,
+            memory = falcon_loader_prim.pe_memory,
+            program = falcon_loader_prim.pe_program,
+            program_recursive = falcon_loader_prim.pe_program_recursive
         }
     },
 
