@@ -6,14 +6,16 @@ use gluon;
 use std::path::Path;
 use std::sync::Arc;
 
+use architecture;
 use il;
 use memory;
-use types;
 
-falcon_type_wrapper!(falcon::loader::Elf, LoaderElf);
+falcon_type_wrapper!(Arc<falcon::loader::Elf>, LoaderElf);
 
-fn elf_architecture(elf: &LoaderElf) -> types::TypesArchitecture {
-    types::TypesArchitecture { x: elf.x.architecture().unwrap() }
+fn elf_architecture(elf: &LoaderElf) -> architecture::ArchitectureArchitecture {
+    architecture::ArchitectureArchitecture {
+        x: Arc::new(elf.x.architecture().box_clone())
+    }
 }
 
 fn elf_base_address(elf: &LoaderElf) -> u64 {
@@ -32,7 +34,7 @@ fn elf_function_entries(elf: &LoaderElf) -> Vec<LoaderFunctionEntry> {
 fn elf_from_file(filename: String) -> LoaderElf {
     let path = Path::new(&filename);
     LoaderElf {
-        x: falcon::loader::Elf::from_file(&path).unwrap()
+        x: Arc::new(falcon::loader::Elf::from_file(&path).unwrap())
     }
 }
 
@@ -52,16 +54,18 @@ fn elf_program_recursive(elf: &LoaderElf) -> il::IlProgram {
     il::IlProgram { x: elf.x.program_recursive().unwrap() }
 }
 
-falcon_type_wrapper!(falcon::loader::Pe, LoaderPe);
+falcon_type_wrapper!(Arc<falcon::loader::Pe>, LoaderPe);
 
-fn pe_architecture(pe: &LoaderPe) -> types::TypesArchitecture {
-    types::TypesArchitecture { x: pe.x.architecture().unwrap() }
+fn pe_architecture(pe: &LoaderPe) -> architecture::ArchitectureArchitecture {
+    architecture::ArchitectureArchitecture {
+        x: Arc::new(pe.x.architecture().box_clone())
+    }
 }
 
 fn pe_from_file(filename: String) -> LoaderPe {
     let path = Path::new(&filename);
     LoaderPe {
-        x: falcon::loader::Pe::from_file(&path).unwrap()
+        x: Arc::new(falcon::loader::Pe::from_file(&path).unwrap())
     }
 }
 
@@ -110,8 +114,10 @@ fn loader_from_file(filename: String) -> Option<LoaderLoader> {
     Some(LoaderLoader { x: loader })
 }
 
-fn loader_architecture(loader: &LoaderLoader) -> types::TypesArchitecture {
-    types::TypesArchitecture { x: loader.x.architecture().unwrap() }
+fn loader_architecture(loader: &LoaderLoader) -> architecture::ArchitectureArchitecture {
+    architecture::ArchitectureArchitecture {
+        x: Arc::new(loader.x.architecture().box_clone())
+    }
 }
 
 fn loader_function(loader: &LoaderLoader, address: u64) -> il::IlFunction {

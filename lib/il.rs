@@ -15,8 +15,8 @@ fn constant_format(constant: &IlConstant) -> String {
     format!("{}", constant.x)
 }
 
-fn constant_value(constant: &IlConstant) -> u64 {
-    constant.x.value()
+fn constant_value_u64(constant: &IlConstant) -> Option<u64> {
+    constant.x.value_u64()
 }
 
 fn constant_bits(constant: &IlConstant) -> usize {
@@ -626,7 +626,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             constant_format => primitive!(1 constant_format),
             constant_new => primitive!(2 constant_new),
             constant_str => primitive!(1 constant_str),
-            constant_value => primitive!(1 constant_value),
+            constant_value => primitive!(1 constant_value_u64),
             control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
             control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
             control_flow_graph_edges => primitive!(1 control_flow_graph_edges),

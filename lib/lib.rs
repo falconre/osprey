@@ -17,10 +17,11 @@ macro_rules! falcon_type_wrapper {
 }
 
 
+pub mod analysis;
+pub mod architecture;
 pub mod il;
 pub mod loader;
 pub mod memory;
-pub mod types;
 
 
 fn hex(v: u64) -> String {
@@ -61,9 +62,10 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
 pub fn attach_bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
     // The order is important
     let vm = bindings(vm);
+    let vm = analysis::bindings(vm);
+    let vm = architecture::bindings(vm);
     let vm = il::bindings(vm);
     let vm = memory::bindings(vm);
-    let vm = types::bindings(vm);
     let vm = loader::bindings(vm);
     vm
 }

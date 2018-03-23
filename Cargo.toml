@@ -9,8 +9,8 @@ license = "Apache-2.0"
 [dependencies]
 clap = "2.26"
 falcon = { git="https://github.com/falconre/falcon", branch="0.3.0" }
-gluon = "0.7.0"
-gluon_vm = "0.7.0"
+gluon = "0.7.1"
+gluon_vm = "0.7.1"
 
 [[bin]]
 name = "osprey"

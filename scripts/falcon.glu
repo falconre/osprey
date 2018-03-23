@@ -14,6 +14,7 @@ let (++) = string.monoid.semigroup.append
 let { (==) } = string.eq
 
 let falcon_prim = import! "falcon_prim"
+let falcon_analysis_prim = import! "falcon_analysis_prim"
 let falcon_il_prim = import! "falcon_il_prim"
 let falcon_loader_prim = import! "falcon_loader_prim"
 
@@ -153,6 +154,17 @@ let edge_condition edge =
     hex = falcon_prim.hex,
     println = falcon_prim.println,
     env = falcon_prim.env,
+
+    analysis = {
+        dead_code_elimination = falcon_analysis_prim.dead_code_elimination,
+
+        constants = {
+            analysis = falcon_analysis_prim.constants_analysis,
+            eval = falcon_analysis_prim.constants_eval,
+            scalar = falcon_analysis_prim.constants_scalar
+        }
+    },
+
     il = {
         block = {
             index = falcon_il_prim.block_index,

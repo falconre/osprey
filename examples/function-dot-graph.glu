@@ -22,7 +22,7 @@ let unwrap option =
 
 // Import the falcon library
 let falcon = import! "scripts/falcon.glu"
-let { il, loader } = falcon
+let { analysis, il, loader } = falcon
 
 
 // Arguments to our script
@@ -69,6 +69,7 @@ let output =
   | Some function_entry -> 
     let address = loader.function_entry.address function_entry
     let function = loader.loader.function binary address
+    let function = analysis.dead_code_elimination function
     let cfg = il.function.control_flow_graph function
     il.control_flow_graph.dot_graph cfg
 
