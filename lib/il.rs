@@ -53,6 +53,22 @@ fn scalar_str(scalar: &IlScalar) -> String {
 
 falcon_type_wrapper!(falcon::il::Expression, IlExpression);
 
+impl<'vm> gluon::vm::api::Getable<'vm> for IlExpression {
+    fn from_value(_vm: &'vm gluon::vm::thread::Thread,
+                  value: gluon::vm::Variants)
+        -> Self {
+
+        match value.as_ref() {
+            gluon::vm::api::ValueRef::Userdata(u) => {
+                let i: &IlExpression =
+                    u.downcast_ref::<IlExpression>().unwrap();
+                i.clone()
+            },
+            _ => panic!("ValueRef is not a Userdata"),
+        }
+    }
+}
+
 fn expression_format(expression: &IlExpression) -> String {
     format!("{}", expression.x)
 }
@@ -108,6 +124,17 @@ fn expression_trun(bits: usize, expr: &IlExpression) -> IlExpression {
     IlExpression { x: falcon::il::Expression::zext(bits, expr.x.clone()).unwrap() }
 }
 
+fn expression_ite(cond: &IlExpression, then: &IlExpression, else_: &IlExpression)
+    -> IlExpression {
+    IlExpression {
+        x: falcon::il::Expression::ite(
+            cond.x.clone(),
+            then.x.clone(),
+            else_.x.clone()
+        ).unwrap()
+    }
+}
+
 fn expression_type(expr: &IlExpression) -> String {
     match expr.x {
         falcon::il::Expression::Scalar(_) => "scalar",
@@ -131,6 +158,7 @@ fn expression_type(expr: &IlExpression) -> String {
         falcon::il::Expression::Zext(_,_) => "zext",
         falcon::il::Expression::Sext(_,_) => "sext",
         falcon::il::Expression::Trun(_,_) => "trun",
+        falcon::il::Expression::Ite(_,_,_) => "ite"
     }.to_string()
 }
 
@@ -196,6 +224,30 @@ fn expression_get_rhs(expr: &IlExpression) -> IlExpression {
         falcon::il::Expression::Trun(_, ref rhs) =>
             IlExpression { x: *rhs.clone() },
         _ => panic!("expression_get_rhs called on expr without rhs")
+    }
+}
+
+fn expression_get_cond(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Ite(ref cond, _, _) =>
+            IlExpression { x: *cond.clone() },
+        _ => panic!("expression_get_cond called over non-ite expression")
+    }
+}
+
+fn expression_get_then(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Ite(_, ref then, _) =>
+            IlExpression { x: *then.clone() },
+        _ => panic!("expression_get_then called over non-ite expression")
+    }
+}
+
+fn expression_get_else(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Ite(_, _, ref else_) =>
+            IlExpression { x: *else_.clone() },
+        _ => panic!("expression_get_else called over non-ite expression")
     }
 }
 
@@ -512,10 +564,12 @@ fn program_location_format(program_location: &IlProgramLocation) -> String {
     format!("{}", program_location.x)
 }
 
-fn program_location_from_address(program: &IlProgram, address: u64) -> IlProgramLocation {
-    IlProgramLocation {
-        x: falcon::il::RefProgramLocation::from_address(&program.x, address).unwrap().into()
-    }
+fn program_location_from_address(program: &IlProgram, address: u64)
+    -> Option<IlProgramLocation> {
+
+    Some(IlProgramLocation {
+        x: falcon::il::RefProgramLocation::from_address(&program.x, address)?.into()
+    })
 }
 
 fn program_location_function_location(program_location: &IlProgramLocation) -> IlFunctionLocation {
@@ -529,6 +583,16 @@ fn program_location_new(function: &IlFunction, function_location: &IlFunctionLoc
 
     let pl = falcon::il::ProgramLocation::new(function.x.index(), function_location.x.clone());
     IlProgramLocation { x: pl }
+}
+
+fn program_location_instruction(
+    program_location: &IlProgramLocation,
+    program: &IlProgram
+) -> Option<IlInstruction> {
+
+    program_location.x.apply(&program.x).and_then(
+        |ref_program_location| ref_program_location.instruction().map(
+            |instruction| IlInstruction { x: instruction.clone() }))
 }
 
 
@@ -626,7 +690,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             constant_format => primitive!(1 constant_format),
             constant_new => primitive!(2 constant_new),
             constant_str => primitive!(1 constant_str),
-            constant_value => primitive!(1 constant_value_u64),
+            constant_value_u64 => primitive!(1 constant_value_u64),
             control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
             control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
             control_flow_graph_edges => primitive!(1 control_flow_graph_edges),
@@ -658,11 +722,15 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             expression_zext => primitive!(2 expression_zext),
             expression_sext => primitive!(2 expression_sext),
             expression_trun => primitive!(2 expression_trun),
+            expression_ite => primitive!(3 expression_ite),
             expression_type => primitive!(1 expression_type),
             expression_get_scalar => primitive!(1 expression_get_scalar),
             expression_get_constant => primitive!(1 expression_get_constant),
             expression_get_lhs => primitive!(1 expression_get_lhs),
             expression_get_rhs => primitive!(1 expression_get_rhs),
+            expression_get_cond => primitive!(1 expression_get_cond),
+            expression_get_then => primitive!(1 expression_get_then),
+            expression_get_else => primitive!(1 expression_get_else),
             expression_get_bits => primitive!(1 expression_get_bits),
             expression_str => primitive!(1 expression_str),
             function_address => primitive!(1 function_address),
@@ -704,9 +772,10 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             program_functions => primitive!(1 program_functions),
             program_new => primitive!(0 program_new),
             program_location_format => primitive!(1 program_location_format),
-            program_location_new => primitive!(2 program_location_new),
             program_location_from_address => primitive!(2 program_location_from_address),
             program_location_function_location => primitive!(1 program_location_function_location),
+            program_location_instruction => primitive!(2 program_location_instruction),
+            program_location_new => primitive!(2 program_location_new),
             scalar_bits => primitive!(1 scalar_bits),
             scalar_format => primitive!(1 scalar_format),
             scalar_name => primitive!(1 scalar_name),

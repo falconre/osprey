@@ -15,6 +15,7 @@ let { (==) } = string.eq
 
 let falcon_prim = import! "falcon_prim"
 let falcon_analysis_prim = import! "falcon_analysis_prim"
+let falcon_architecture_prim = import! "falcon_architecture_prim"
 let falcon_il_prim = import! "falcon_il_prim"
 let falcon_loader_prim = import! "falcon_loader_prim"
 
@@ -46,10 +47,14 @@ type Expression = | Scalar   IlScalar
                   | Zext     Int IlExpression
                   | Sext     Int IlExpression
                   | Trun     Int IlExpression
+                  | Ite      IlExpression IlExpression IlExpression
 
 let expression_match expression =
     let get_lhs = falcon_il_prim.expression_get_lhs
     let get_rhs = falcon_il_prim.expression_get_rhs
+    let get_cond = falcon_il_prim.expression_get_cond
+    let get_then = falcon_il_prim.expression_get_then
+    let get_else = falcon_il_prim.expression_get_else
     let get_bits = falcon_il_prim.expression_get_bits
 
     let typ = falcon_il_prim.expression_type expression
@@ -94,8 +99,12 @@ let expression_match expression =
         Zext (get_bits expression) (get_rhs expression)
     else if typ == "sext" then
         Sext (get_bits expression) (get_rhs expression)
-    else
+    else if typ == "trun" then
         Trun (get_bits expression) (get_rhs expression)
+    else if typ == "ite" then
+        Ite (get_cond expression) (get_then expression) (get_else expression)
+    else
+        error "Invalid expression type"
 
 
 type Operation = | Assign IlScalar IlExpression
@@ -151,9 +160,11 @@ let edge_condition edge =
 
 
 {
-    hex = falcon_prim.hex,
-    println = falcon_prim.println,
     env = falcon_prim.env,
+    eval = falcon_prim.eval,
+    hex = falcon_prim.hex,
+    int_to_string = falcon_prim.int_to_string,
+    println = falcon_prim.println,
 
     analysis = {
         dead_code_elimination = falcon_analysis_prim.dead_code_elimination,
@@ -163,6 +174,10 @@ let edge_condition edge =
             eval = falcon_analysis_prim.constants_eval,
             scalar = falcon_analysis_prim.constants_scalar
         }
+    },
+
+    architecture = {
+        endian = falcon_architecture_prim.architecture_endian
     },
 
     il = {
@@ -189,7 +204,7 @@ let edge_condition edge =
             format = falcon_il_prim.constant_format,
             new = falcon_il_prim.constant_new,
             str = falcon_il_prim.constant_str,
-            value = falcon_il_prim.constant_value
+            value_u64 = falcon_il_prim.constant_value_u64
         },
 
         edge = {
@@ -222,6 +237,7 @@ let edge_condition edge =
             zext = falcon_il_prim.expression_zext,
             sext = falcon_il_prim.expression_sext,
             trun = falcon_il_prim.expression_trun,
+            ite = falcon_il_prim.expression_ite,
             match_ = expression_match,
             str = falcon_il_prim.expression_str
         },
@@ -273,6 +289,7 @@ let edge_condition edge =
             format = falcon_il_prim.program_location_format,
             from_address = falcon_il_prim.program_location_from_address,
             function_location = falcon_il_prim.program_location_function_location,
+            instruction = falcon_il_prim.program_location_instruction,
             new = falcon_il_prim.program_location_new
         },
 

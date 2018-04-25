@@ -42,14 +42,28 @@ fn env (name: String) -> Option<String> {
 }
 
 
+fn eval(expression: &il::IlExpression) -> Option<il::IlConstant> {
+    falcon::executor::eval(&expression.x)
+        .ok()
+        .map(|constant| il::IlConstant {x: constant})
+}
+
+
+fn int_to_string(i: usize) -> Option<String> {
+    String::from_utf8(vec![i as u8]).ok()
+}
+
+
 pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     fn falcon_prim_loader(vm: &gluon::Thread)
         -> gluon::vm::Result<gluon::vm::ExternModule> {
         
         gluon::vm::ExternModule::new(vm, record! {
+            env => primitive!(1 env),
+            eval => primitive!(1 eval),
             hex => primitive!(1 hex),
-            println => primitive!(1 println),
-            env => primitive!(1 env)
+            int_to_string => primitive!(1 int_to_string),
+            println => primitive!(1 println)
         })
     }
 
