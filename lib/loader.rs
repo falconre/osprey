@@ -26,8 +26,8 @@ fn elf_function_entries(elf: &LoaderElf) -> Vec<LoaderFunctionEntry> {
     elf.x
         .function_entries()
         .unwrap()
-        .iter()
-        .map(|fe| LoaderFunctionEntry { x: fe.clone() })
+        .into_iter()
+        .map(|fe| LoaderFunctionEntry { x: fe })
         .collect::<Vec<LoaderFunctionEntry>>()
 }
 
@@ -53,6 +53,58 @@ fn elf_program(elf: &LoaderElf) -> il::IlProgram {
 fn elf_program_recursive(elf: &LoaderElf) -> il::IlProgram {
     il::IlProgram { x: elf.x.program_recursive().unwrap() }
 }
+
+
+falcon_type_wrapper!(Arc<falcon::loader::ElfLinker>, LoaderElfLinker);
+
+fn elf_linker_architecture(elf_linker: &LoaderElfLinker)
+    -> architecture::ArchitectureArchitecture {
+
+    architecture::ArchitectureArchitecture {
+        x: Arc::new(elf_linker.x.architecture().box_clone())
+    }
+}
+
+fn elf_linker_function(elf_linker: &LoaderElfLinker, address: u64)
+    -> Option<il::IlFunction> {
+
+    elf_linker.x.function(address).ok().map(|f| il::IlFunction {x: f})
+}
+
+fn elf_linker_function_entries(elf_linker: &LoaderElfLinker)
+    -> Vec<LoaderFunctionEntry> {
+
+    elf_linker.x
+        .function_entries()
+        .unwrap()
+        .into_iter()
+        .map(|fe| LoaderFunctionEntry { x: fe })
+        .collect()
+}
+
+fn elf_linker_memory(elf_linker: &LoaderElfLinker) -> memory::BackingMemory {
+    memory::BackingMemory { x: elf_linker.x.memory().unwrap() }
+}
+
+fn elf_linker_new(filename: String) -> LoaderElfLinker {
+    let path = Path::new(&filename);
+    LoaderElfLinker {
+        x: Arc::new(falcon::loader::ElfLinker::new(&path).unwrap())
+    }
+}
+
+fn elf_linker_program(elf_linker: &LoaderElfLinker) -> il::IlProgram {
+    il::IlProgram { x: elf_linker.x.program().unwrap() }
+}
+
+fn elf_linker_program_entry(elf_linker: &LoaderElfLinker) -> u64 {
+    elf_linker.x.program_entry()
+}
+
+fn elf_linker_program_recursive(elf_linker: &LoaderElfLinker) -> il::IlProgram {
+    il::IlProgram { x: elf_linker.x.program_recursive().unwrap() }
+}
+
 
 falcon_type_wrapper!(Arc<falcon::loader::Pe>, LoaderPe);
 
@@ -163,6 +215,7 @@ fn function_entry_str(function_entry: &LoaderFunctionEntry) -> String {
 pub fn bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
 
     vm.register_type::<LoaderElf>("LoaderElf", &[]).unwrap();
+    vm.register_type::<LoaderElfLinker>("LoaderElfLinker", &[]).unwrap();
     vm.register_type::<LoaderFunctionEntry>("LoaderFunctionEntry", &[]).unwrap();
     vm.register_type::<LoaderLoader>("LoaderLoader", &[]).unwrap();
     vm.register_type::<LoaderPe>("LoaderPe", &[]).unwrap();
@@ -179,6 +232,14 @@ pub fn bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
             elf_memory => primitive!(1 elf_memory),
             elf_program => primitive!(1 elf_program),
             elf_program_recursive => primitive!(1 elf_program_recursive),
+            elf_linker_architecture => primitive!(1 elf_linker_architecture),
+            elf_linker_function => primitive!(2 elf_linker_function),
+            elf_linker_function_entries => primitive!(1 elf_linker_function_entries),
+            elf_linker_memory => primitive!(1 elf_linker_memory),
+            elf_linker_new => primitive!(1 elf_linker_new),
+            elf_linker_program => primitive!(1 elf_linker_program),
+            elf_linker_program_entry => primitive!(1 elf_linker_program_entry),
+            elf_linker_program_recursive => primitive!(1 elf_linker_program_recursive),
             function_entry_name => primitive!(1 function_entry_name),
             function_entry_address => primitive!(1 function_entry_address),
             function_entry_str => primitive!(1 function_entry_str),

@@ -27,6 +27,10 @@ fn constant_str(constant: &IlConstant) -> String {
     format!("{}", constant.x)
 }
 
+fn constant_eq(lhs: &IlConstant, rhs: &IlConstant) -> bool {
+    lhs.x == rhs.x
+}
+
 
 falcon_type_wrapper!(falcon::il::Scalar, IlScalar);
 
@@ -48,6 +52,10 @@ fn scalar_bits(scalar: &IlScalar) -> usize {
 
 fn scalar_str(scalar: &IlScalar) -> String {
     format!("{}", scalar.x)
+}
+
+fn scalar_eq(lhs: &IlScalar, rhs: &IlScalar) -> bool {
+    lhs.x == rhs.x
 }
 
 
@@ -595,6 +603,14 @@ fn program_location_instruction(
             |instruction| IlInstruction { x: instruction.clone() }))
 }
 
+fn program_add_function(program: &IlProgram, function: &IlFunction)
+    -> IlProgram {
+
+    let mut program = program.clone();
+    program.x.add_function(function.x.clone());
+    program
+}
+
 
 falcon_type_wrapper!(falcon::il::FunctionLocation, IlFunctionLocation);
 
@@ -687,6 +703,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             block_raise => primitive!(2 block_raise),
             block_str => primitive!(1 block_str),
             constant_bits => primitive!(1 constant_bits),
+            constant_eq => primitive!(2 constant_eq),
             constant_format => primitive!(1 constant_format),
             constant_new => primitive!(2 constant_new),
             constant_str => primitive!(1 constant_str),
@@ -767,6 +784,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             operation_branch_target => primitive!(1 operation_branch_target),
             operation_raise_expr => primitive!(1 operation_raise_expr),
             operation_str => primitive!(1 operation_str),
+            program_add_function => primitive!(2 program_add_function),
             program_function_by_address => primitive!(2 program_function_by_address),
             program_function_by_name => primitive!(2 program_function_by_name),
             program_functions => primitive!(1 program_functions),
@@ -777,6 +795,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             program_location_instruction => primitive!(2 program_location_instruction),
             program_location_new => primitive!(2 program_location_new),
             scalar_bits => primitive!(1 scalar_bits),
+            scalar_eq => primitive!(2 scalar_eq),
             scalar_format => primitive!(1 scalar_format),
             scalar_name => primitive!(1 scalar_name),
             scalar_new => primitive!(2 scalar_new),

@@ -201,6 +201,7 @@ let edge_condition edge =
 
         constant = {
             bits = falcon_il_prim.constant_bits,
+            eq = falcon_il_prim.constant_eq,
             format = falcon_il_prim.constant_format,
             new = falcon_il_prim.constant_new,
             str = falcon_il_prim.constant_str,
@@ -278,6 +279,7 @@ let edge_condition edge =
         },
 
         program = {
+            add_function = falcon_il_prim.program_add_function,
             format = falcon_il_prim.program_location_format,
             function_by_address = falcon_il_prim.program_function_by_address,
             function_by_name = falcon_il_prim.program_function_by_name,
@@ -294,8 +296,9 @@ let edge_condition edge =
         },
 
         scalar = {
-            format = falcon_il_prim.scalar_format,
             bits = falcon_il_prim.scalar_bits,
+            eq = falcon_il_prim.scalar_eq,
+            format = falcon_il_prim.scalar_format,
             new = falcon_il_prim.scalar_new,
             name = falcon_il_prim.scalar_name,
             str = falcon_il_prim.scalar_str
@@ -312,6 +315,17 @@ let edge_condition edge =
             memory = falcon_loader_prim.elf_memory,
             program = falcon_loader_prim.elf_program,
             program_recursive = falcon_loader_prim.elf_program_recursive
+        },
+
+        elf_linker = {
+            architecture = falcon_loader_prim.elf_linker_architecture,
+            function = falcon_loader_prim.elf_linker_function,
+            function_entries = falcon_loader_prim.elf_linker_function_entries,
+            memory = falcon_loader_prim.elf_linker_memory,
+            new = falcon_loader_prim.elf_linker_new,
+            program = falcon_loader_prim.elf_linker_program,
+            program_entry = falcon_loader_prim.elf_linker_program_entry,
+            program_recursive = falcon_loader_prim.elf_linker_program_recursive
         },
 
         function_entry = {
