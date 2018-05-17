@@ -79,17 +79,17 @@ fn elf_linker_function_entries(elf_linker: &LoaderElfLinker)
         .unwrap()
         .into_iter()
         .map(|fe| LoaderFunctionEntry { x: fe })
-        .collect()
+        .collect::<Vec<LoaderFunctionEntry>>()
 }
 
 fn elf_linker_memory(elf_linker: &LoaderElfLinker) -> memory::BackingMemory {
     memory::BackingMemory { x: elf_linker.x.memory().unwrap() }
 }
 
-fn elf_linker_new(filename: String) -> LoaderElfLinker {
+fn elf_linker_new(filename: String, do_relocations: bool) -> LoaderElfLinker {
     let path = Path::new(&filename);
     LoaderElfLinker {
-        x: Arc::new(falcon::loader::ElfLinker::new(&path).unwrap())
+        x: Arc::new(falcon::loader::ElfLinker::new(&path, do_relocations).unwrap())
     }
 }
 
@@ -236,7 +236,7 @@ pub fn bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
             elf_linker_function => primitive!(2 elf_linker_function),
             elf_linker_function_entries => primitive!(1 elf_linker_function_entries),
             elf_linker_memory => primitive!(1 elf_linker_memory),
-            elf_linker_new => primitive!(1 elf_linker_new),
+            elf_linker_new => primitive!(2 elf_linker_new),
             elf_linker_program => primitive!(1 elf_linker_program),
             elf_linker_program_entry => primitive!(1 elf_linker_program_entry),
             elf_linker_program_recursive => primitive!(1 elf_linker_program_recursive),

@@ -9,7 +9,6 @@ let option = import! "std/option.glu"
 let { Option } = option
 
 let string = import! "std/string.glu"
-let (++) = string.monoid.semigroup.append
 
 // Import the falcon library
 let falcon = import! "scripts/falcon.glu"
@@ -39,7 +38,9 @@ let functions program =
       let function = array.index functions i
       let name = il.function.name function
       let address = il.function.address function
-      falcon.println (name ++ " 0x" ++ (falcon.hex address))
+      let s = string.append name " 0x"
+      let s = string.append s (falcon.hex address)
+      falcon.println s
       function_print functions (i + 1)
   function_print (il.program.functions program) 0
 

@@ -6,18 +6,19 @@
 let array = import! "std/array.glu"
 let function = import! "std/function.glu"
 let io = import! "std/io.glu"
+let int = import! "std/int.glu"
 let option = import! "std/types.glu"
+let result = import! "std/result.glu"
 let { Option } = option
+let { Result } = result
 let { (|>) } = function
 
 let string = import! "std/string.glu"
-let { (==) } = string.eq
-let (++) = string.monoid.semigroup.append
 
 let unwrap option = 
-    match option with
-    | Some x -> x
-    | None -> error "unwrapped option with value None"
+  match option with
+  | Some x -> x
+  | None -> error "unwrapped option with value None"
 
 
 // Import the falcon library
@@ -31,11 +32,6 @@ let filename =
   | Some filename -> filename
   | None -> error "Could not get filename"
 
-let function_name = 
-  match falcon.env "FUNCTION_NAME" with
-  | Some function_name -> function_name
-  | None -> "Could not get function name"
-
 
 // Load the binary
 let binary =
@@ -44,32 +40,42 @@ let binary =
   | None -> error "Could not load binary"
 
 
-// Calls loader::Loader::function_entries() and walks the resulting entries until
-// an entry with desired name is found, and returns that
-let find_function binary function_name =
-  let find functions i name =
-    if i == (array.len functions) then
-      None
-    else
-      let function_entry = array.index functions i
-      match loader.function_entry.name function_entry with
-      | Some entry_name ->
-        if entry_name == name then
-          Some function_entry
-        else
-          find functions (i + 1) name
-      | None -> find functions (i + 1) name
-  find (loader.loader.function_entries binary) 0 function_name
-
-
-// If we found our target function, return the dot graph of the CFG.
-let output =
-  match find_function binary function_name with
-  | None -> "Could not find " ++ function_name
-  | Some function_entry -> 
+let function = 
+  match falcon.env "FUNCTION_NAME" with
+  | Some function_name ->
+    let find functions i name =
+      if i == (array.len functions) then
+        None
+      else
+        let function_entry = array.index functions i
+        match loader.function_entry.name function_entry with
+        | Some entry_name ->
+          if entry_name == name then
+            Some function_entry
+          else
+            find functions (i + 1) name
+        | None -> find functions (i + 1) name
+    let function_entries = loader.loader.function_entries binary
+    let function_entry = find function_entries 0 function_name
+    let function_entry =
+      match function_entry with
+      | Some function_entry -> function_entry
+      | None -> error "Failed to find function entry"
     let address = loader.function_entry.address function_entry
-    let function = loader.loader.function binary address
-    let function = analysis.dead_code_elimination function
+    loader.loader.function binary address
+  | None ->
+    match falcon.env "FUNCTION_ADDRESS" with
+    | Some address ->
+      let address =
+        match int.from_str_radix address 16 with
+        | Ok address -> address
+        | Err _ -> error "Failed to parse base16 address"
+      loader.loader.function binary address
+    | None -> error "Give FUNCTION_NAME or FUNCTION_ADDRESS"
+
+
+let output =
+    // let function = analysis.dead_code_elimination function
     let cfg = il.function.control_flow_graph function
     il.control_flow_graph.dot_graph cfg
 

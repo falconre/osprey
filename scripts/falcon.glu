@@ -107,11 +107,12 @@ let expression_match expression =
         error "Invalid expression type"
 
 
-type Operation = | Assign IlScalar IlExpression
-                 | Store  IlExpression IlExpression
-                 | Load   IlScalar IlExpression
-                 | Branch IlExpression
-                 | Raise  IlExpression
+type Operation = | Assign    IlScalar     IlExpression
+                 | Store     IlExpression IlExpression
+                 | Load      IlScalar     IlExpression
+                 | Branch    IlExpression
+                 | Raise     IlExpression
+                 | Intrinsic IlIntrinsic
 
 let operation_match operation =
     let fip = falcon_il_prim
@@ -127,6 +128,8 @@ let operation_match operation =
         Branch (fip.operation_branch_target operation)
     else if typ == "raise" then
         Raise (fip.operation_raise_expr operation)
+    else if typ == "intrinsic" then
+        Intrinsic (fip.operation_intrinsic_intrinsic operation)
     else
         error ("bad operation type" ++ typ)
 
@@ -265,6 +268,11 @@ let edge_condition edge =
             index = falcon_il_prim.instruction_index,
             operation = falcon_il_prim.instruction_operation,
             str = falcon_il_prim.instruction_str
+        },
+
+        intrinsic = {
+            mnemonic = falcon_il_prim.intrinsic_mnemonic,
+            instruction_str = falcon_il_prim.intrinsic_instruction_str
         },
 
         operation = {

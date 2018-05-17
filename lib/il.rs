@@ -273,6 +273,17 @@ fn expression_str(expr: &IlExpression) -> String {
 }
 
 
+falcon_type_wrapper!(falcon::il::Intrinsic, IlIntrinsic);
+
+fn intrinsic_mnemonic(intrinsic: &IlIntrinsic) -> String {
+    intrinsic.x.mnemonic().to_string()
+}
+
+fn intrinsic_instruction_str(intrinsic: &IlIntrinsic) -> String {
+    intrinsic.x.instruction_str().to_string()
+}
+
+
 falcon_type_wrapper!(falcon::il::Operation, IlOperation);
 
 fn operation_format(operation: &IlOperation) -> String {
@@ -301,11 +312,12 @@ fn operation_raise(expr: &IlExpression) -> IlOperation {
 
 fn operation_type(operation: &IlOperation) -> String {
     match operation.x {
-        falcon::il::Operation::Assign { .. } => "assign",
-        falcon::il::Operation::Store  { .. } => "store",
-        falcon::il::Operation::Load   { .. } => "load",
-        falcon::il::Operation::Branch { .. } => "branch",
-        falcon::il::Operation::Raise  { .. } => "raise"
+        falcon::il::Operation::Assign    { .. } => "assign",
+        falcon::il::Operation::Store     { .. } => "store",
+        falcon::il::Operation::Load      { .. } => "load",
+        falcon::il::Operation::Branch    { .. } => "branch",
+        falcon::il::Operation::Raise     { .. } => "raise",
+        falcon::il::Operation::Intrinsic { .. } => "intrinsic",
     }.to_string()
 }
 
@@ -363,6 +375,14 @@ fn operation_raise_expr(operation: &IlOperation) -> IlExpression {
     match operation.x {
         falcon::il::Operation::Raise {ref expr } => IlExpression { x: expr.clone() },
         _ => panic!("operation_raise_expr called on non-raise op")
+    }
+}
+
+fn operation_intrinsic_intrinsic(operation: &IlOperation) -> IlIntrinsic {
+    match operation.x {
+        falcon::il::Operation::Intrinsic {ref intrinsic } =>
+            IlIntrinsic { x: intrinsic.clone() },
+        _ => panic!("operation_intrinsic_intrinsic called on non-intrinsic op")
     }
 }
 
@@ -536,7 +556,9 @@ fn function_block(function: &IlFunction, index: i32) -> Option<IlBlock> {
 
 falcon_type_wrapper!(falcon::il::Program, IlProgram);
 
-fn program_new() -> IlProgram {
+// TODO: We pass a dummy argument to get around a gluon bug. Need this bug
+// resolved
+fn program_new(_: usize) -> IlProgram {
     IlProgram { x: falcon::il::Program::new() }
 }
 
@@ -563,6 +585,16 @@ fn program_function_by_address(program: &IlProgram, address: u64)
         Some(function) => Some(IlFunction { x: function.clone() }),
         None => None
     }
+}
+
+fn program_add_function(program: &IlProgram, function: &IlFunction)
+    -> IlProgram {
+    
+    println!("In program_add_function");
+
+    let mut program = program.clone();
+    program.x.add_function(function.x.clone());
+    program
 }
 
 
@@ -601,14 +633,6 @@ fn program_location_instruction(
     program_location.x.apply(&program.x).and_then(
         |ref_program_location| ref_program_location.instruction().map(
             |instruction| IlInstruction { x: instruction.clone() }))
-}
-
-fn program_add_function(program: &IlProgram, function: &IlFunction)
-    -> IlProgram {
-
-    let mut program = program.clone();
-    program.x.add_function(function.x.clone());
-    program
 }
 
 
@@ -680,6 +704,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlConstant>("IlConstant", &[]).unwrap();
     vm.register_type::<IlScalar>("IlScalar", &[]).unwrap();
     vm.register_type::<IlExpression>("IlExpression", &[]).unwrap();
+    vm.register_type::<IlIntrinsic>("IlIntrinsic", &[]).unwrap();
     vm.register_type::<IlOperation>("IlOperation", &[]).unwrap();
     vm.register_type::<IlInstruction>("IlInstruction", &[]).unwrap();
     vm.register_type::<IlBlock>("IlBlock", &[]).unwrap();
@@ -768,6 +793,8 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             instruction_index => primitive!(1 instruction_index),
             instruction_operation => primitive!(1 instruction_operation),
             instruction_str => primitive!(1 instruction_str),
+            intrinsic_mnemonic => primitive!(1 intrinsic_mnemonic),
+            intrinsic_instruction_str => primitive!(1 intrinsic_instruction_str),
             operation_format => primitive!(1 operation_format),
             operation_assign => primitive!(2 operation_assign),
             operation_store => primitive!(2 operation_store),
@@ -783,12 +810,13 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             operation_load_index => primitive!(1 operation_load_index),
             operation_branch_target => primitive!(1 operation_branch_target),
             operation_raise_expr => primitive!(1 operation_raise_expr),
+            operation_intrinsic_intrinsic => primitive!(1 operation_intrinsic_intrinsic),
             operation_str => primitive!(1 operation_str),
             program_add_function => primitive!(2 program_add_function),
             program_function_by_address => primitive!(2 program_function_by_address),
             program_function_by_name => primitive!(2 program_function_by_name),
             program_functions => primitive!(1 program_functions),
-            program_new => primitive!(0 program_new),
+            program_new => primitive!(1 program_new),
             program_location_format => primitive!(1 program_location_format),
             program_location_from_address => primitive!(2 program_location_from_address),
             program_location_function_location => primitive!(1 program_location_function_location),
