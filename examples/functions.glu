@@ -1,0 +1,49 @@
+// This script takes the path to a binary, and the name of a function, and
+// prints out a graphviz dot graph of that function in Falcon IL.
+
+
+// Some standard boilerplate stuff for gluon
+let array = import! "std/array.glu"
+let int = import! "std/int.glu"
+let option = import! "std/option.glu"
+let { Option } = option
+
+let string = import! "std/string.glu"
+
+// Import the falcon library
+let falcon = import! "scripts/falcon.glu"
+let { il, loader } = falcon
+
+
+// Arguments to our script
+let filename =
+  match falcon.env "FILENAME" with
+  | Some filename -> filename
+  | None -> error "Could not get filename"
+
+
+// Load the elf
+let binary =
+  match loader.loader.from_file filename with
+  | Some x -> x
+  | None -> error "Failed to load binary"
+
+let program = loader.loader.program_recursive binary
+
+let functions program =
+  let function_print functions i =
+    if i == (array.len functions) then 
+      ()
+    else 
+      let function = array.index functions i
+      let name = il.function.name function
+      let address = il.function.address function
+      let s = string.append name " 0x"
+      let s = string.append s (falcon.hex address)
+      falcon.println s
+      function_print functions (i + 1)
+  function_print (il.program.functions program) 0
+
+functions program
+
+falcon.println (int.show.show (array.len (il.program.functions program)))

@@ -1,0 +1,113 @@
+// This script takes the path to a binary, and the name of a function, and
+// prints out a graphviz dot graph of that function in Falcon IL.
+
+
+// Some standard boilerplate stuff for gluon
+let array = import! "std/array.glu"
+
+let function = import! "std/function.glu"
+let { (|>) } = function
+
+let int = import! "std/int.glu"
+
+let list = import! "std/list.glu"
+let {List} = list
+
+let option = import! "std/option.glu"
+let {Option} = option
+
+let {(++)} = import! "std/string.glu"
+
+// Import the falcon library
+let falcon = import! "scripts/falcon.glu"
+let {il, loader} = falcon
+let {Operation} = falcon.types
+
+
+// Arguments to our script
+let filename =
+  match falcon.env "FILENAME" with
+  | Some filename -> filename
+  | None -> error "Could not get filename"
+
+// Load the binary
+let binary =
+  match loader.loader.from_file filename with
+  | Some x -> x
+  | None -> error "Failed to load binary"
+
+// Lift the program
+let program = loader.loader.program_recursive binary
+
+let printf  = { name="printf", arg="a0" }
+let sprintf = { name="sprintf", arg="a1" }
+let snprintf = { name="snprintf", arg="a1" }
+
+let prepare_printfs =
+  let f pprintfs =
+    match pprintfs with
+    | Cons p pp ->
+      match il.program.function_by_name program p.name with
+      | Some function ->
+        let address = il.function.address function
+        let p = { address=address, name=p.name, arg=p.arg }
+        Cons p (f pp)
+      | None -> f pp
+    | Nil -> Nil
+  f (Cons printf (Cons sprintf (Cons snprintf Nil)))
+
+let printfs = prepare_printfs
+
+// Print out the printf types we found
+let print_printfs printfs =
+  match printfs with
+  | Cons p pp ->
+    falcon.println (p.name ++ " 0x" ++ (falcon.hex p.address))
+    print_printfs pp
+  | Nil -> ()
+
+print_printfs printfs
+
+
+let array_to_list a =
+  let ff a i =
+    if (array.len a) == i then
+      Nil
+    else
+     Cons (array.index a i) (ff a (i + 1))
+  ff a 0
+
+let list_append l r =
+  match l with
+  | Cons x xs ->
+    let f ll =
+      match ll with
+      | Cons x Nil -> Cons x r
+      | Cons x xs -> f xs
+      | Nil -> error "list_append error"
+    f l
+  | Nil -> r
+
+let foldl accum l f =
+  match l with
+  | Cons x xs -> foldl (f accum x) xs f
+  | Nil -> accum
+
+let map l f =
+  match l with
+  | Cons x xs -> Cons (f x) (map xs f)
+  | Nil -> Nil
+
+
+// given a function, get all branch instructions
+let branches =
+  let functions = il.program.functions program |> array_to_list
+  foldl Nil functions (\branches function ->
+    Nil)
+
+  
+
+//map branches (\function block instruction target ->
+//  falcon.println (falcon.hex (il.instruction.address instruction)))
+
+()

@@ -5,14 +5,13 @@ let falcon = import! "scripts/falcon.glu"
 let function = import! "std/function.glu"
 let io = import! "std/io.glu"
 let list = import! "std/list.glu"
-let string = import! "std/string.glu"
 let types = import! "std/types.glu"
 
 let { il, loader } = falcon
 let { Expression, Operation } = falcon.types
 let { List } = list
 let { (|>) } = function
-let (++) = string.monoid.semigroup.append
+let {(++)} = import! "std/string.glu"
 let { Option, Bool } = types
 
 let append l m =
@@ -109,7 +108,7 @@ let find_brcs function : IlFunction -> List IlInstruction =
     map is_brc instructions |> filter is_some |> map unwrap
 
 
-let find_function elf function_name =
+let find_function binary function_name =
     let find functions i name =
         if i == (array.len functions) then
             None
@@ -122,17 +121,20 @@ let find_function elf function_name =
                 else
                     find functions (i + 1) name
             | None -> find functions (i + 1) name
-    find (loader.elf.function_entries elf) 0 function_name
+    find (loader.loader.function_entries binary) 0 function_name
 
 
-let elf = loader.elf.from_file filename
+let binary =
+    match loader.loader.from_file filename with
+    | Some x -> x
+    | None -> error "Failed to load binary"
 
 let function_entry =
-    match find_function elf function_name with
+    match find_function binary function_name with
     | Some function_entry -> function_entry
     | None -> error "failed to find function entry"
     
-let function = loader.function_entry.address function_entry |> loader.elf.function elf
+let function = loader.function_entry.address function_entry |> loader.loader.function binary
 
 let brcs = find_brcs function |> filter brc_is_direct
 let strings = map il.instruction.str brcs

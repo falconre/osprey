@@ -15,8 +15,8 @@ fn constant_format(constant: &IlConstant) -> String {
     format!("{}", constant.x)
 }
 
-fn constant_value(constant: &IlConstant) -> u64 {
-    constant.x.value()
+fn constant_value_u64(constant: &IlConstant) -> Option<u64> {
+    constant.x.value_u64()
 }
 
 fn constant_bits(constant: &IlConstant) -> usize {
@@ -25,6 +25,10 @@ fn constant_bits(constant: &IlConstant) -> usize {
 
 fn constant_str(constant: &IlConstant) -> String {
     format!("{}", constant.x)
+}
+
+fn constant_eq(lhs: &IlConstant, rhs: &IlConstant) -> bool {
+    lhs.x == rhs.x
 }
 
 
@@ -50,8 +54,28 @@ fn scalar_str(scalar: &IlScalar) -> String {
     format!("{}", scalar.x)
 }
 
+fn scalar_eq(lhs: &IlScalar, rhs: &IlScalar) -> bool {
+    lhs.x == rhs.x
+}
+
 
 falcon_type_wrapper!(falcon::il::Expression, IlExpression);
+
+impl<'vm> gluon::vm::api::Getable<'vm> for IlExpression {
+    fn from_value(_vm: &'vm gluon::vm::thread::Thread,
+                  value: gluon::vm::Variants)
+        -> Self {
+
+        match value.as_ref() {
+            gluon::vm::api::ValueRef::Userdata(u) => {
+                let i: &IlExpression =
+                    u.downcast_ref::<IlExpression>().unwrap();
+                i.clone()
+            },
+            _ => panic!("ValueRef is not a Userdata"),
+        }
+    }
+}
 
 fn expression_format(expression: &IlExpression) -> String {
     format!("{}", expression.x)
@@ -108,6 +132,17 @@ fn expression_trun(bits: usize, expr: &IlExpression) -> IlExpression {
     IlExpression { x: falcon::il::Expression::zext(bits, expr.x.clone()).unwrap() }
 }
 
+fn expression_ite(cond: &IlExpression, then: &IlExpression, else_: &IlExpression)
+    -> IlExpression {
+    IlExpression {
+        x: falcon::il::Expression::ite(
+            cond.x.clone(),
+            then.x.clone(),
+            else_.x.clone()
+        ).unwrap()
+    }
+}
+
 fn expression_type(expr: &IlExpression) -> String {
     match expr.x {
         falcon::il::Expression::Scalar(_) => "scalar",
@@ -131,6 +166,7 @@ fn expression_type(expr: &IlExpression) -> String {
         falcon::il::Expression::Zext(_,_) => "zext",
         falcon::il::Expression::Sext(_,_) => "sext",
         falcon::il::Expression::Trun(_,_) => "trun",
+        falcon::il::Expression::Ite(_,_,_) => "ite"
     }.to_string()
 }
 
@@ -199,6 +235,30 @@ fn expression_get_rhs(expr: &IlExpression) -> IlExpression {
     }
 }
 
+fn expression_get_cond(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Ite(ref cond, _, _) =>
+            IlExpression { x: *cond.clone() },
+        _ => panic!("expression_get_cond called over non-ite expression")
+    }
+}
+
+fn expression_get_then(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Ite(_, ref then, _) =>
+            IlExpression { x: *then.clone() },
+        _ => panic!("expression_get_then called over non-ite expression")
+    }
+}
+
+fn expression_get_else(expr: &IlExpression) -> IlExpression {
+    match expr.x {
+        falcon::il::Expression::Ite(_, _, ref else_) =>
+            IlExpression { x: *else_.clone() },
+        _ => panic!("expression_get_else called over non-ite expression")
+    }
+}
+
 fn expression_get_bits(expr: &IlExpression) -> usize {
     match expr.x {
         falcon::il::Expression::Zext(bits, _) |
@@ -210,6 +270,17 @@ fn expression_get_bits(expr: &IlExpression) -> usize {
 
 fn expression_str(expr: &IlExpression) -> String {
     format!("{}", expr.x)
+}
+
+
+falcon_type_wrapper!(falcon::il::Intrinsic, IlIntrinsic);
+
+fn intrinsic_mnemonic(intrinsic: &IlIntrinsic) -> String {
+    intrinsic.x.mnemonic().to_string()
+}
+
+fn intrinsic_instruction_str(intrinsic: &IlIntrinsic) -> String {
+    intrinsic.x.instruction_str().to_string()
 }
 
 
@@ -235,17 +306,14 @@ fn operation_branch(target: &IlExpression) -> IlOperation {
     IlOperation { x: falcon::il::Operation::branch(target.x.clone()) }
 }
 
-fn operation_raise(expr: &IlExpression) -> IlOperation {
-    IlOperation { x: falcon::il::Operation::raise(expr.x.clone())}
-}
-
 fn operation_type(operation: &IlOperation) -> String {
     match operation.x {
-        falcon::il::Operation::Assign { .. } => "assign",
-        falcon::il::Operation::Store  { .. } => "store",
-        falcon::il::Operation::Load   { .. } => "load",
-        falcon::il::Operation::Branch { .. } => "branch",
-        falcon::il::Operation::Raise  { .. } => "raise"
+        falcon::il::Operation::Assign    { .. } => "assign",
+        falcon::il::Operation::Store     { .. } => "store",
+        falcon::il::Operation::Load      { .. } => "load",
+        falcon::il::Operation::Branch    { .. } => "branch",
+        falcon::il::Operation::Intrinsic { .. } => "intrinsic",
+        falcon::il::Operation::Nop              => "nop"
     }.to_string()
 }
 
@@ -299,10 +367,11 @@ fn operation_branch_target(operation: &IlOperation) -> IlExpression {
     }
 }
 
-fn operation_raise_expr(operation: &IlOperation) -> IlExpression {
+fn operation_intrinsic_intrinsic(operation: &IlOperation) -> IlIntrinsic {
     match operation.x {
-        falcon::il::Operation::Raise {ref expr } => IlExpression { x: expr.clone() },
-        _ => panic!("operation_raise_expr called on non-raise op")
+        falcon::il::Operation::Intrinsic {ref intrinsic } =>
+            IlIntrinsic { x: intrinsic.clone() },
+        _ => panic!("operation_intrinsic_intrinsic called on non-intrinsic op")
     }
 }
 
@@ -325,7 +394,7 @@ fn instruction_operation(instruction: &IlInstruction) -> IlOperation {
     IlOperation { x: instruction.x.operation().clone() }
 }
 
-fn instruction_index(instruction: &IlInstruction) -> u64 {
+fn instruction_index(instruction: &IlInstruction) -> usize {
     instruction.x.index()
 }
 
@@ -336,7 +405,7 @@ fn instruction_str(instruction: &IlInstruction) -> String {
 
 falcon_type_wrapper!(falcon::il::Block, IlBlock);
 
-fn block_index(block: &IlBlock) -> u64 {
+fn block_index(block: &IlBlock) -> usize {
     block.x.index()
 }
 
@@ -372,12 +441,6 @@ fn block_branch(block: &IlBlock, target: &IlExpression) -> IlBlock {
     block
 }
 
-fn block_raise(block: &IlBlock, expr: &IlExpression) -> IlBlock {
-    let mut block = block.clone();
-    block.x.raise(expr.x.clone());
-    block
-}
-
 fn block_str(block: &IlBlock) -> String {
     format!("{}", block.x)
 }
@@ -386,7 +449,7 @@ fn block_str(block: &IlBlock) -> String {
 falcon_type_wrapper!(falcon::il::Edge, IlEdge);
 
 fn edge_has_condition(edge: &IlEdge) -> bool {
-    if let Some(_) = *edge.x.condition() {
+    if let Some(_) = edge.x.condition() {
         true
     }
     else {
@@ -395,14 +458,14 @@ fn edge_has_condition(edge: &IlEdge) -> bool {
 }
 
 fn edge_condition(edge: &IlEdge) -> IlExpression {
-    IlExpression { x: edge.x.condition().clone().unwrap() }
+    IlExpression { x: edge.x.condition().clone().unwrap().clone() }
 }
 
-fn edge_head(edge: &IlEdge) -> u64 {
+fn edge_head(edge: &IlEdge) -> usize {
     edge.x.head()
 }
 
-fn edge_tail(edge: &IlEdge) -> u64 {
+fn edge_tail(edge: &IlEdge) -> usize {
     edge.x.tail()
 }
 
@@ -450,12 +513,12 @@ fn function_control_flow_graph(function: &IlFunction) -> IlControlFlowGraph {
     }
 }
 
-fn function_index(function: &IlFunction) -> Option<u64> {
+fn function_index(function: &IlFunction) -> Option<usize> {
     function.x.index()
 }
 
 fn function_name(function: &IlFunction) -> String {
-    function.x.name().to_string()
+    function.x.name()
 }
 
 fn function_address(function: &IlFunction) -> u64 {
@@ -466,8 +529,8 @@ fn function_blocks(function: &IlFunction) -> Vec<IlBlock> {
     function.x.blocks().iter().map(|b| IlBlock { x: (*b).clone() }).collect()
 }
 
-fn function_block(function: &IlFunction, index: i32) -> Option<IlBlock> {
-    match function.x.block(index as u64) {
+fn function_block(function: &IlFunction, index: usize) -> Option<IlBlock> {
+    match function.x.block(index) {
         Some(block) => Some(IlBlock { x: block.clone() }),
         None => None
     }
@@ -476,7 +539,9 @@ fn function_block(function: &IlFunction, index: i32) -> Option<IlBlock> {
 
 falcon_type_wrapper!(falcon::il::Program, IlProgram);
 
-fn program_new() -> IlProgram {
+// TODO: We pass a dummy argument to get around a gluon bug. Need this bug
+// resolved
+fn program_new(_: usize) -> IlProgram {
     IlProgram { x: falcon::il::Program::new() }
 }
 
@@ -490,7 +555,10 @@ fn program_function_by_name(program: &IlProgram, name: &str) -> Option<IlFunctio
 }
 
 fn program_functions(program: &IlProgram) -> Vec<IlFunction> {
-    program.x.functions().iter().map(|f| IlFunction { x: (*f).clone() }).collect()
+    program.x
+           .functions()
+           .into_iter()
+           .map(|f| IlFunction { x: f.clone() }).collect()
 }
 
 fn program_function_by_address(program: &IlProgram, address: u64)
@@ -502,6 +570,16 @@ fn program_function_by_address(program: &IlProgram, address: u64)
     }
 }
 
+fn program_add_function(program: &IlProgram, function: &IlFunction)
+    -> IlProgram {
+    
+    println!("In program_add_function");
+
+    let mut program = program.clone();
+    program.x.add_function(function.x.clone());
+    program
+}
+
 
 falcon_type_wrapper!(falcon::il::ProgramLocation, IlProgramLocation);
 
@@ -509,10 +587,12 @@ fn program_location_format(program_location: &IlProgramLocation) -> String {
     format!("{}", program_location.x)
 }
 
-fn program_location_from_address(program: &IlProgram, address: u64) -> IlProgramLocation {
-    IlProgramLocation {
-        x: falcon::il::RefProgramLocation::from_address(&program.x, address).unwrap().into()
-    }
+fn program_location_from_address(program: &IlProgram, address: u64)
+    -> Option<IlProgramLocation> {
+
+    Some(IlProgramLocation {
+        x: falcon::il::RefProgramLocation::from_address(&program.x, address)?.into()
+    })
 }
 
 fn program_location_function_location(program_location: &IlProgramLocation) -> IlFunctionLocation {
@@ -526,6 +606,16 @@ fn program_location_new(function: &IlFunction, function_location: &IlFunctionLoc
 
     let pl = falcon::il::ProgramLocation::new(function.x.index(), function_location.x.clone());
     IlProgramLocation { x: pl }
+}
+
+fn program_location_instruction(
+    program_location: &IlProgramLocation,
+    program: &IlProgram
+) -> Option<IlInstruction> {
+
+    program_location.x.apply(&program.x).and_then(
+        |ref_program_location| ref_program_location.instruction().map(
+            |instruction| IlInstruction { x: instruction.clone() }))
 }
 
 
@@ -597,6 +687,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
     vm.register_type::<IlConstant>("IlConstant", &[]).unwrap();
     vm.register_type::<IlScalar>("IlScalar", &[]).unwrap();
     vm.register_type::<IlExpression>("IlExpression", &[]).unwrap();
+    vm.register_type::<IlIntrinsic>("IlIntrinsic", &[]).unwrap();
     vm.register_type::<IlOperation>("IlOperation", &[]).unwrap();
     vm.register_type::<IlInstruction>("IlInstruction", &[]).unwrap();
     vm.register_type::<IlBlock>("IlBlock", &[]).unwrap();
@@ -617,13 +708,13 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             block_store => primitive!(3 block_store),
             block_load => primitive!(3 block_load),
             block_branch => primitive!(2 block_branch),
-            block_raise => primitive!(2 block_raise),
             block_str => primitive!(1 block_str),
             constant_bits => primitive!(1 constant_bits),
+            constant_eq => primitive!(2 constant_eq),
             constant_format => primitive!(1 constant_format),
             constant_new => primitive!(2 constant_new),
             constant_str => primitive!(1 constant_str),
-            constant_value => primitive!(1 constant_value),
+            constant_value_u64 => primitive!(1 constant_value_u64),
             control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
             control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
             control_flow_graph_edges => primitive!(1 control_flow_graph_edges),
@@ -655,11 +746,15 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             expression_zext => primitive!(2 expression_zext),
             expression_sext => primitive!(2 expression_sext),
             expression_trun => primitive!(2 expression_trun),
+            expression_ite => primitive!(3 expression_ite),
             expression_type => primitive!(1 expression_type),
             expression_get_scalar => primitive!(1 expression_get_scalar),
             expression_get_constant => primitive!(1 expression_get_constant),
             expression_get_lhs => primitive!(1 expression_get_lhs),
             expression_get_rhs => primitive!(1 expression_get_rhs),
+            expression_get_cond => primitive!(1 expression_get_cond),
+            expression_get_then => primitive!(1 expression_get_then),
+            expression_get_else => primitive!(1 expression_get_else),
             expression_get_bits => primitive!(1 expression_get_bits),
             expression_str => primitive!(1 expression_str),
             function_address => primitive!(1 function_address),
@@ -680,12 +775,13 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             instruction_index => primitive!(1 instruction_index),
             instruction_operation => primitive!(1 instruction_operation),
             instruction_str => primitive!(1 instruction_str),
+            intrinsic_mnemonic => primitive!(1 intrinsic_mnemonic),
+            intrinsic_instruction_str => primitive!(1 intrinsic_instruction_str),
             operation_format => primitive!(1 operation_format),
             operation_assign => primitive!(2 operation_assign),
             operation_store => primitive!(2 operation_store),
             operation_load => primitive!(2 operation_load),
             operation_branch => primitive!(1 operation_branch),
-            operation_raise => primitive!(1 operation_raise),
             operation_type => primitive!(1 operation_type),
             operation_assign_src => primitive!(1 operation_assign_src),
             operation_assign_dst => primitive!(1 operation_assign_dst),
@@ -694,17 +790,20 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             operation_load_dst => primitive!(1 operation_load_dst),
             operation_load_index => primitive!(1 operation_load_index),
             operation_branch_target => primitive!(1 operation_branch_target),
-            operation_raise_expr => primitive!(1 operation_raise_expr),
+            operation_intrinsic_intrinsic => primitive!(1 operation_intrinsic_intrinsic),
             operation_str => primitive!(1 operation_str),
+            program_add_function => primitive!(2 program_add_function),
             program_function_by_address => primitive!(2 program_function_by_address),
             program_function_by_name => primitive!(2 program_function_by_name),
             program_functions => primitive!(1 program_functions),
-            program_new => primitive!(0 program_new),
+            program_new => primitive!(1 program_new),
             program_location_format => primitive!(1 program_location_format),
-            program_location_new => primitive!(2 program_location_new),
             program_location_from_address => primitive!(2 program_location_from_address),
             program_location_function_location => primitive!(1 program_location_function_location),
+            program_location_instruction => primitive!(2 program_location_instruction),
+            program_location_new => primitive!(2 program_location_new),
             scalar_bits => primitive!(1 scalar_bits),
+            scalar_eq => primitive!(2 scalar_eq),
             scalar_format => primitive!(1 scalar_format),
             scalar_name => primitive!(1 scalar_name),
             scalar_new => primitive!(2 scalar_new),

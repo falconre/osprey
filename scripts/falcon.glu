@@ -9,11 +9,11 @@ let { Option } = types
 let test = import! "std/test.glu"
 let { assert } = test
 
-let string = import! "std/string.glu"
-let (++) = string.monoid.semigroup.append
-let { (==) } = string.eq
+let {(++)} = import! "std/string.glu"
 
 let falcon_prim = import! "falcon_prim"
+let falcon_analysis_prim = import! "falcon_analysis_prim"
+let falcon_architecture_prim = import! "falcon_architecture_prim"
 let falcon_il_prim = import! "falcon_il_prim"
 let falcon_loader_prim = import! "falcon_loader_prim"
 
@@ -45,10 +45,14 @@ type Expression = | Scalar   IlScalar
                   | Zext     Int IlExpression
                   | Sext     Int IlExpression
                   | Trun     Int IlExpression
+                  | Ite      IlExpression IlExpression IlExpression
 
 let expression_match expression =
     let get_lhs = falcon_il_prim.expression_get_lhs
     let get_rhs = falcon_il_prim.expression_get_rhs
+    let get_cond = falcon_il_prim.expression_get_cond
+    let get_then = falcon_il_prim.expression_get_then
+    let get_else = falcon_il_prim.expression_get_else
     let get_bits = falcon_il_prim.expression_get_bits
 
     let typ = falcon_il_prim.expression_type expression
@@ -93,15 +97,20 @@ let expression_match expression =
         Zext (get_bits expression) (get_rhs expression)
     else if typ == "sext" then
         Sext (get_bits expression) (get_rhs expression)
-    else
+    else if typ == "trun" then
         Trun (get_bits expression) (get_rhs expression)
+    else if typ == "ite" then
+        Ite (get_cond expression) (get_then expression) (get_else expression)
+    else
+        error "Invalid expression type"
 
 
-type Operation = | Assign IlScalar IlExpression
-                 | Store  IlExpression IlExpression
-                 | Load   IlScalar IlExpression
-                 | Branch IlExpression
-                 | Raise  IlExpression
+type Operation = | Assign    IlScalar     IlExpression
+                 | Store     IlExpression IlExpression
+                 | Load      IlScalar     IlExpression
+                 | Branch    IlExpression
+                 | Intrinsic IlIntrinsic
+                 | Nop
 
 let operation_match operation =
     let fip = falcon_il_prim
@@ -115,8 +124,10 @@ let operation_match operation =
         Load (fip.operation_load_dst operation) (fip.operation_load_index operation)
     else if typ == "branch" then
         Branch (fip.operation_branch_target operation)
-    else if typ == "raise" then
-        Raise (fip.operation_raise_expr operation)
+    else if typ == "intrinsic" then
+        Intrinsic (fip.operation_intrinsic_intrinsic operation)
+    else if typ == "nop" then
+        Nop
     else
         error ("bad operation type" ++ typ)
 
@@ -150,9 +161,26 @@ let edge_condition edge =
 
 
 {
-    hex = falcon_prim.hex,
-    println = falcon_prim.println,
     env = falcon_prim.env,
+    eval = falcon_prim.eval,
+    hex = falcon_prim.hex,
+    int_to_string = falcon_prim.int_to_string,
+    println = falcon_prim.println,
+
+    analysis = {
+        dead_code_elimination = falcon_analysis_prim.dead_code_elimination,
+
+        constants = {
+            analysis = falcon_analysis_prim.constants_analysis,
+            eval = falcon_analysis_prim.constants_eval,
+            scalar = falcon_analysis_prim.constants_scalar
+        }
+    },
+
+    architecture = {
+        endian = falcon_architecture_prim.architecture_endian
+    },
+
     il = {
         block = {
             index = falcon_il_prim.block_index,
@@ -161,7 +189,6 @@ let edge_condition edge =
             store = falcon_il_prim.block_store,
             load = falcon_il_prim.block_load,
             branch = falcon_il_prim.block_branch,
-            raise = falcon_il_prim.block_raise,
             str = falcon_il_prim.block_str
         },
 
@@ -174,10 +201,11 @@ let edge_condition edge =
 
         constant = {
             bits = falcon_il_prim.constant_bits,
+            eq = falcon_il_prim.constant_eq,
             format = falcon_il_prim.constant_format,
             new = falcon_il_prim.constant_new,
             str = falcon_il_prim.constant_str,
-            value = falcon_il_prim.constant_value
+            value_u64 = falcon_il_prim.constant_value_u64
         },
 
         edge = {
@@ -210,6 +238,7 @@ let edge_condition edge =
             zext = falcon_il_prim.expression_zext,
             sext = falcon_il_prim.expression_sext,
             trun = falcon_il_prim.expression_trun,
+            ite = falcon_il_prim.expression_ite,
             match_ = expression_match,
             str = falcon_il_prim.expression_str
         },
@@ -238,18 +267,23 @@ let edge_condition edge =
             str = falcon_il_prim.instruction_str
         },
 
+        intrinsic = {
+            mnemonic = falcon_il_prim.intrinsic_mnemonic,
+            instruction_str = falcon_il_prim.intrinsic_instruction_str
+        },
+
         operation = {
             format = falcon_il_prim.operation_format,
             assign = falcon_il_prim.operation_assign,
             store = falcon_il_prim.operation_store,
             load = falcon_il_prim.operation_load,
             branch = falcon_il_prim.operation_branch,
-            raise = falcon_il_prim.operation_raise,
             match_ = operation_match,
             str = falcon_il_prim.operation_str
         },
 
         program = {
+            add_function = falcon_il_prim.program_add_function,
             format = falcon_il_prim.program_location_format,
             function_by_address = falcon_il_prim.program_function_by_address,
             function_by_name = falcon_il_prim.program_function_by_name,
@@ -261,12 +295,14 @@ let edge_condition edge =
             format = falcon_il_prim.program_location_format,
             from_address = falcon_il_prim.program_location_from_address,
             function_location = falcon_il_prim.program_location_function_location,
+            instruction = falcon_il_prim.program_location_instruction,
             new = falcon_il_prim.program_location_new
         },
 
         scalar = {
-            format = falcon_il_prim.scalar_format,
             bits = falcon_il_prim.scalar_bits,
+            eq = falcon_il_prim.scalar_eq,
+            format = falcon_il_prim.scalar_format,
             new = falcon_il_prim.scalar_new,
             name = falcon_il_prim.scalar_name,
             str = falcon_il_prim.scalar_str
@@ -280,13 +316,46 @@ let edge_condition edge =
             from_file = falcon_loader_prim.elf_from_file,
             function_entries = falcon_loader_prim.elf_function_entries,
             function = falcon_loader_prim.elf_function,
-            memory = falcon_loader_prim.elf_memory
+            memory = falcon_loader_prim.elf_memory,
+            program = falcon_loader_prim.elf_program,
+            program_recursive = falcon_loader_prim.elf_program_recursive
+        },
+
+        elf_linker = {
+            architecture = falcon_loader_prim.elf_linker_architecture,
+            function = falcon_loader_prim.elf_linker_function,
+            function_entries = falcon_loader_prim.elf_linker_function_entries,
+            memory = falcon_loader_prim.elf_linker_memory,
+            new = falcon_loader_prim.elf_linker_new,
+            program = falcon_loader_prim.elf_linker_program,
+            program_entry = falcon_loader_prim.elf_linker_program_entry,
+            program_recursive = falcon_loader_prim.elf_linker_program_recursive
         },
 
         function_entry = {
             name = falcon_loader_prim.function_entry_name,
             address = falcon_loader_prim.function_entry_address,
             str = falcon_loader_prim.function_entry_str
+        },
+
+        loader = {
+            architecture = falcon_loader_prim.loader_architecture,
+            from_file = falcon_loader_prim.loader_from_file,
+            function_entries = falcon_loader_prim.loader_function_entries,
+            function = falcon_loader_prim.loader_function,
+            memory = falcon_loader_prim.loader_memory,
+            program = falcon_loader_prim.loader_program,
+            program_recursive = falcon_loader_prim.loader_program_recursive,
+        },
+        
+        pe = {
+            architecture = falcon_loader_prim.pe_architecture,
+            from_file = falcon_loader_prim.pe_from_file,
+            function_entries = falcon_loader_prim.pe_function_entries,
+            function = falcon_loader_prim.pe_function,
+            memory = falcon_loader_prim.pe_memory,
+            program = falcon_loader_prim.pe_program,
+            program_recursive = falcon_loader_prim.pe_program_recursive
         }
     },
 
