@@ -5,14 +5,13 @@ let falcon = import! "scripts/falcon.glu"
 let function = import! "std/function.glu"
 let io = import! "std/io.glu"
 let list = import! "std/list.glu"
-let string = import! "std/string.glu"
 let types = import! "std/types.glu"
 
 let { il, loader } = falcon
 let { Expression, Operation } = falcon.types
 let { List } = list
 let { (|>) } = function
-let (++) = string.monoid.semigroup.append
+let {(++)} = import! "std/string.glu"
 let { Option, Bool } = types
 
 let append l m =

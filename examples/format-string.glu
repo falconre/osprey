@@ -16,9 +16,7 @@ let {List} = list
 let option = import! "std/option.glu"
 let {Option} = option
 
-let string = import! "std/string.glu"
-let {(==)} = string.eq
-let (++) = string.monoid.semigroup.append
+let {(++)} = import! "std/string.glu"
 
 // Import the falcon library
 let falcon = import! "scripts/falcon.glu"

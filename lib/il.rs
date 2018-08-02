@@ -306,18 +306,14 @@ fn operation_branch(target: &IlExpression) -> IlOperation {
     IlOperation { x: falcon::il::Operation::branch(target.x.clone()) }
 }
 
-fn operation_raise(expr: &IlExpression) -> IlOperation {
-    IlOperation { x: falcon::il::Operation::raise(expr.x.clone())}
-}
-
 fn operation_type(operation: &IlOperation) -> String {
     match operation.x {
         falcon::il::Operation::Assign    { .. } => "assign",
         falcon::il::Operation::Store     { .. } => "store",
         falcon::il::Operation::Load      { .. } => "load",
         falcon::il::Operation::Branch    { .. } => "branch",
-        falcon::il::Operation::Raise     { .. } => "raise",
         falcon::il::Operation::Intrinsic { .. } => "intrinsic",
+        falcon::il::Operation::Nop              => "nop"
     }.to_string()
 }
 
@@ -371,13 +367,6 @@ fn operation_branch_target(operation: &IlOperation) -> IlExpression {
     }
 }
 
-fn operation_raise_expr(operation: &IlOperation) -> IlExpression {
-    match operation.x {
-        falcon::il::Operation::Raise {ref expr } => IlExpression { x: expr.clone() },
-        _ => panic!("operation_raise_expr called on non-raise op")
-    }
-}
-
 fn operation_intrinsic_intrinsic(operation: &IlOperation) -> IlIntrinsic {
     match operation.x {
         falcon::il::Operation::Intrinsic {ref intrinsic } =>
@@ -405,7 +394,7 @@ fn instruction_operation(instruction: &IlInstruction) -> IlOperation {
     IlOperation { x: instruction.x.operation().clone() }
 }
 
-fn instruction_index(instruction: &IlInstruction) -> u64 {
+fn instruction_index(instruction: &IlInstruction) -> usize {
     instruction.x.index()
 }
 
@@ -416,7 +405,7 @@ fn instruction_str(instruction: &IlInstruction) -> String {
 
 falcon_type_wrapper!(falcon::il::Block, IlBlock);
 
-fn block_index(block: &IlBlock) -> u64 {
+fn block_index(block: &IlBlock) -> usize {
     block.x.index()
 }
 
@@ -452,12 +441,6 @@ fn block_branch(block: &IlBlock, target: &IlExpression) -> IlBlock {
     block
 }
 
-fn block_raise(block: &IlBlock, expr: &IlExpression) -> IlBlock {
-    let mut block = block.clone();
-    block.x.raise(expr.x.clone());
-    block
-}
-
 fn block_str(block: &IlBlock) -> String {
     format!("{}", block.x)
 }
@@ -478,11 +461,11 @@ fn edge_condition(edge: &IlEdge) -> IlExpression {
     IlExpression { x: edge.x.condition().clone().unwrap().clone() }
 }
 
-fn edge_head(edge: &IlEdge) -> u64 {
+fn edge_head(edge: &IlEdge) -> usize {
     edge.x.head()
 }
 
-fn edge_tail(edge: &IlEdge) -> u64 {
+fn edge_tail(edge: &IlEdge) -> usize {
     edge.x.tail()
 }
 
@@ -530,7 +513,7 @@ fn function_control_flow_graph(function: &IlFunction) -> IlControlFlowGraph {
     }
 }
 
-fn function_index(function: &IlFunction) -> Option<u64> {
+fn function_index(function: &IlFunction) -> Option<usize> {
     function.x.index()
 }
 
@@ -546,8 +529,8 @@ fn function_blocks(function: &IlFunction) -> Vec<IlBlock> {
     function.x.blocks().iter().map(|b| IlBlock { x: (*b).clone() }).collect()
 }
 
-fn function_block(function: &IlFunction, index: i32) -> Option<IlBlock> {
-    match function.x.block(index as u64) {
+fn function_block(function: &IlFunction, index: usize) -> Option<IlBlock> {
+    match function.x.block(index) {
         Some(block) => Some(IlBlock { x: block.clone() }),
         None => None
     }
@@ -725,7 +708,6 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             block_store => primitive!(3 block_store),
             block_load => primitive!(3 block_load),
             block_branch => primitive!(2 block_branch),
-            block_raise => primitive!(2 block_raise),
             block_str => primitive!(1 block_str),
             constant_bits => primitive!(1 constant_bits),
             constant_eq => primitive!(2 constant_eq),
@@ -800,7 +782,6 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             operation_store => primitive!(2 operation_store),
             operation_load => primitive!(2 operation_load),
             operation_branch => primitive!(1 operation_branch),
-            operation_raise => primitive!(1 operation_raise),
             operation_type => primitive!(1 operation_type),
             operation_assign_src => primitive!(1 operation_assign_src),
             operation_assign_dst => primitive!(1 operation_assign_dst),
@@ -809,7 +790,6 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
             operation_load_dst => primitive!(1 operation_load_dst),
             operation_load_index => primitive!(1 operation_load_index),
             operation_branch_target => primitive!(1 operation_branch_target),
-            operation_raise_expr => primitive!(1 operation_raise_expr),
             operation_intrinsic_intrinsic => primitive!(1 operation_intrinsic_intrinsic),
             operation_str => primitive!(1 operation_str),
             program_add_function => primitive!(2 program_add_function),
