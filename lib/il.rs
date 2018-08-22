@@ -539,9 +539,7 @@ fn function_block(function: &IlFunction, index: usize) -> Option<IlBlock> {
 
 falcon_type_wrapper!(falcon::il::Program, IlProgram);
 
-// TODO: We pass a dummy argument to get around a gluon bug. Need this bug
-// resolved
-fn program_new(_: usize) -> IlProgram {
+fn program_new(_: ()) -> IlProgram {
     IlProgram { x: falcon::il::Program::new() }
 }
 
