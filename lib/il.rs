@@ -61,21 +61,21 @@ fn scalar_eq(lhs: &IlScalar, rhs: &IlScalar) -> bool {
 
 falcon_type_wrapper!(falcon::il::Expression, IlExpression);
 
-impl<'vm> gluon::vm::api::Getable<'vm> for IlExpression {
-    fn from_value(_vm: &'vm gluon::vm::thread::Thread,
-                  value: gluon::vm::Variants)
-        -> Self {
+// impl<'vm> gluon::vm::api::Getable<'vm> for IlExpression {
+//     fn from_value(_vm: &'vm gluon::vm::thread::Thread,
+//                   value: gluon::vm::Variants)
+//         -> Self {
 
-        match value.as_ref() {
-            gluon::vm::api::ValueRef::Userdata(u) => {
-                let i: &IlExpression =
-                    u.downcast_ref::<IlExpression>().unwrap();
-                i.clone()
-            },
-            _ => panic!("ValueRef is not a Userdata"),
-        }
-    }
-}
+//         match value.as_ref() {
+//             gluon::vm::api::ValueRef::Userdata(u) => {
+//                 let i: &IlExpression =
+//                     u.downcast_ref::<IlExpression>().unwrap();
+//                 i.clone()
+//             },
+//             _ => panic!("ValueRef is not a Userdata"),
+//         }
+//     }
+// }
 
 fn expression_format(expression: &IlExpression) -> String {
     format!("{}", expression.x)
@@ -530,7 +530,7 @@ fn function_blocks(function: &IlFunction) -> Vec<IlBlock> {
 }
 
 fn function_block(function: &IlFunction, index: usize) -> Option<IlBlock> {
-    match function.x.block(index) {
+    match function.x.block(index).ok() {
         Some(block) => Some(IlBlock { x: block.clone() }),
         None => None
     }
@@ -611,7 +611,7 @@ fn program_location_instruction(
     program: &IlProgram
 ) -> Option<IlInstruction> {
 
-    program_location.x.apply(&program.x).and_then(
+    program_location.x.apply(&program.x).ok().and_then(
         |ref_program_location| ref_program_location.instruction().map(
             |instruction| IlInstruction { x: instruction.clone() }))
 }
@@ -630,7 +630,7 @@ fn function_location_type(function_location: &IlFunctionLocation) -> String {
 fn function_location_instruction_get(function_location: &IlFunctionLocation, function: &IlFunction)
 -> Option<IlInstruction> {
 
-    if let Some(ref_function_location) = function_location.x.apply(&function.x) {
+    if let Some(ref_function_location) = function_location.x.apply(&function.x).ok() {
         if let Some(instruction) = ref_function_location.instruction() {
             return Some(IlInstruction { x: instruction.clone() });
         }
@@ -641,7 +641,7 @@ fn function_location_instruction_get(function_location: &IlFunctionLocation, fun
 fn function_location_edge_get(function_location: &IlFunctionLocation, function: &IlFunction)
 -> Option<IlEdge> {
 
-    if let Some(ref_function_location) = function_location.x.apply(&function.x) {
+    if let Some(ref_function_location) = function_location.x.apply(&function.x).ok() {
         if let Some(edge) = ref_function_location.edge() {
             return Some(IlEdge { x: edge.clone() });
         }
@@ -652,7 +652,7 @@ fn function_location_edge_get(function_location: &IlFunctionLocation, function: 
 fn function_location_block_get(function_location: &IlFunctionLocation, function: &IlFunction)
 -> Option<IlBlock> {
 
-    if let Some(ref_function_location) = function_location.x.apply(&function.x) {
+    if let Some(ref_function_location) = function_location.x.apply(&function.x).ok() {
         if let Some(block) = ref_function_location.block() {
             return Some(IlBlock { x: block.clone() });
         }
@@ -700,112 +700,112 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         -> gluon::vm::Result<gluon::vm::ExternModule> {
         
         gluon::vm::ExternModule::new(vm, record! {
-            block_index => primitive!(1 block_index),
-            block_instructions => primitive!(1 block_instructions),
-            block_assign => primitive!(3 block_assign),
-            block_store => primitive!(3 block_store),
-            block_load => primitive!(3 block_load),
-            block_branch => primitive!(2 block_branch),
-            block_str => primitive!(1 block_str),
-            constant_bits => primitive!(1 constant_bits),
-            constant_eq => primitive!(2 constant_eq),
-            constant_format => primitive!(1 constant_format),
-            constant_new => primitive!(2 constant_new),
-            constant_str => primitive!(1 constant_str),
-            constant_value_u64 => primitive!(1 constant_value_u64),
-            control_flow_graph_blocks => primitive!(1 control_flow_graph_blocks),
-            control_flow_graph_dot_graph => primitive!(1 control_flow_graph_dot_graph),
-            control_flow_graph_edges => primitive!(1 control_flow_graph_edges),
-            control_flow_graph_str => primitive!(1 control_flow_graph_str),
-            edge_has_condition => primitive!(1 edge_has_condition),
-            edge_condition => primitive!(1 edge_condition),
-            edge_head => primitive!(1 edge_head),
-            edge_tail => primitive!(1 edge_tail),
-            edge_str => primitive!(1 edge_str),
-            expression_format => primitive!(1 expression_format),
-            expression_scalar => primitive!(1 expression_scalar),
-            expression_constant => primitive!(1 expression_constant),
-            expression_add => primitive!(2 expression_add),
-            expression_sub => primitive!(2 expression_sub),
-            expression_mul => primitive!(2 expression_mul),
-            expression_divu => primitive!(2 expression_divu),
-            expression_modu => primitive!(2 expression_modu),
-            expression_divs => primitive!(2 expression_divs),
-            expression_mods => primitive!(2 expression_mods),
-            expression_and => primitive!(2 expression_and),
-            expression_or => primitive!(2 expression_or),
-            expression_xor => primitive!(2 expression_xor),
-            expression_shl => primitive!(2 expression_shl),
-            expression_shr => primitive!(2 expression_shr),
-            expression_cmpeq => primitive!(2 expression_cmpeq),
-            expression_cmpneq => primitive!(2 expression_cmpneq),
-            expression_cmplts => primitive!(2 expression_cmplts),
-            expression_cmpltu => primitive!(2 expression_cmpltu),
-            expression_zext => primitive!(2 expression_zext),
-            expression_sext => primitive!(2 expression_sext),
-            expression_trun => primitive!(2 expression_trun),
-            expression_ite => primitive!(3 expression_ite),
-            expression_type => primitive!(1 expression_type),
-            expression_get_scalar => primitive!(1 expression_get_scalar),
-            expression_get_constant => primitive!(1 expression_get_constant),
-            expression_get_lhs => primitive!(1 expression_get_lhs),
-            expression_get_rhs => primitive!(1 expression_get_rhs),
-            expression_get_cond => primitive!(1 expression_get_cond),
-            expression_get_then => primitive!(1 expression_get_then),
-            expression_get_else => primitive!(1 expression_get_else),
-            expression_get_bits => primitive!(1 expression_get_bits),
-            expression_str => primitive!(1 expression_str),
-            function_address => primitive!(1 function_address),
-            function_block => primitive!(2 function_block),
-            function_blocks => primitive!(1 function_blocks),
-            function_control_flow_graph => primitive!(1 function_control_flow_graph),
-            function_index => primitive!(1 function_index),
-            function_name => primitive!(1 function_name),
-            function_location_type => primitive!(1 function_location_type),
-            function_location_instruction => primitive!(2 function_location_instruction),
-            function_location_edge => primitive!(1 function_location_edge),
-            function_location_empty_block => primitive!(1 function_location_empty_block),
-            function_location_instruction_get => primitive!(2 function_location_instruction_get),
-            function_location_edge_get => primitive!(2 function_location_edge_get),
-            function_location_block_get => primitive!(2 function_location_block_get),
-            instruction_address => primitive!(1 instruction_address),
-            instruction_format => primitive!(1 instruction_format),
-            instruction_index => primitive!(1 instruction_index),
-            instruction_operation => primitive!(1 instruction_operation),
-            instruction_str => primitive!(1 instruction_str),
-            intrinsic_mnemonic => primitive!(1 intrinsic_mnemonic),
-            intrinsic_instruction_str => primitive!(1 intrinsic_instruction_str),
-            operation_format => primitive!(1 operation_format),
-            operation_assign => primitive!(2 operation_assign),
-            operation_store => primitive!(2 operation_store),
-            operation_load => primitive!(2 operation_load),
-            operation_branch => primitive!(1 operation_branch),
-            operation_type => primitive!(1 operation_type),
-            operation_assign_src => primitive!(1 operation_assign_src),
-            operation_assign_dst => primitive!(1 operation_assign_dst),
-            operation_store_index => primitive!(1 operation_store_index),
-            operation_store_src => primitive!(1 operation_store_src),
-            operation_load_dst => primitive!(1 operation_load_dst),
-            operation_load_index => primitive!(1 operation_load_index),
-            operation_branch_target => primitive!(1 operation_branch_target),
-            operation_intrinsic_intrinsic => primitive!(1 operation_intrinsic_intrinsic),
-            operation_str => primitive!(1 operation_str),
-            program_add_function => primitive!(2 program_add_function),
-            program_function_by_address => primitive!(2 program_function_by_address),
-            program_function_by_name => primitive!(2 program_function_by_name),
-            program_functions => primitive!(1 program_functions),
-            program_new => primitive!(1 program_new),
-            program_location_format => primitive!(1 program_location_format),
-            program_location_from_address => primitive!(2 program_location_from_address),
-            program_location_function_location => primitive!(1 program_location_function_location),
-            program_location_instruction => primitive!(2 program_location_instruction),
-            program_location_new => primitive!(2 program_location_new),
-            scalar_bits => primitive!(1 scalar_bits),
-            scalar_eq => primitive!(2 scalar_eq),
-            scalar_format => primitive!(1 scalar_format),
-            scalar_name => primitive!(1 scalar_name),
-            scalar_new => primitive!(2 scalar_new),
-            scalar_str => primitive!(1 scalar_str)
+            block_index => primitive!(1, block_index),
+            block_instructions => primitive!(1, block_instructions),
+            block_assign => primitive!(3, block_assign),
+            block_store => primitive!(3, block_store),
+            block_load => primitive!(3, block_load),
+            block_branch => primitive!(2, block_branch),
+            block_str => primitive!(1, block_str),
+            constant_bits => primitive!(1, constant_bits),
+            constant_eq => primitive!(2, constant_eq),
+            constant_format => primitive!(1, constant_format),
+            constant_new => primitive!(2, constant_new),
+            constant_str => primitive!(1, constant_str),
+            constant_value_u64 => primitive!(1, constant_value_u64),
+            control_flow_graph_blocks => primitive!(1, control_flow_graph_blocks),
+            control_flow_graph_dot_graph => primitive!(1, control_flow_graph_dot_graph),
+            control_flow_graph_edges => primitive!(1, control_flow_graph_edges),
+            control_flow_graph_str => primitive!(1, control_flow_graph_str),
+            edge_has_condition => primitive!(1, edge_has_condition),
+            edge_condition => primitive!(1, edge_condition),
+            edge_head => primitive!(1, edge_head),
+            edge_tail => primitive!(1, edge_tail),
+            edge_str => primitive!(1, edge_str),
+            expression_format => primitive!(1, expression_format),
+            expression_scalar => primitive!(1, expression_scalar),
+            expression_constant => primitive!(1, expression_constant),
+            expression_add => primitive!(2, expression_add),
+            expression_sub => primitive!(2, expression_sub),
+            expression_mul => primitive!(2, expression_mul),
+            expression_divu => primitive!(2, expression_divu),
+            expression_modu => primitive!(2, expression_modu),
+            expression_divs => primitive!(2, expression_divs),
+            expression_mods => primitive!(2, expression_mods),
+            expression_and => primitive!(2, expression_and),
+            expression_or => primitive!(2, expression_or),
+            expression_xor => primitive!(2, expression_xor),
+            expression_shl => primitive!(2, expression_shl),
+            expression_shr => primitive!(2, expression_shr),
+            expression_cmpeq => primitive!(2, expression_cmpeq),
+            expression_cmpneq => primitive!(2, expression_cmpneq),
+            expression_cmplts => primitive!(2, expression_cmplts),
+            expression_cmpltu => primitive!(2, expression_cmpltu),
+            expression_zext => primitive!(2, expression_zext),
+            expression_sext => primitive!(2, expression_sext),
+            expression_trun => primitive!(2, expression_trun),
+            expression_ite => primitive!(3, expression_ite),
+            expression_type => primitive!(1, expression_type),
+            expression_get_scalar => primitive!(1, expression_get_scalar),
+            expression_get_constant => primitive!(1, expression_get_constant),
+            expression_get_lhs => primitive!(1, expression_get_lhs),
+            expression_get_rhs => primitive!(1, expression_get_rhs),
+            expression_get_cond => primitive!(1, expression_get_cond),
+            expression_get_then => primitive!(1, expression_get_then),
+            expression_get_else => primitive!(1, expression_get_else),
+            expression_get_bits => primitive!(1, expression_get_bits),
+            expression_str => primitive!(1, expression_str),
+            function_address => primitive!(1, function_address),
+            function_block => primitive!(2, function_block),
+            function_blocks => primitive!(1, function_blocks),
+            function_control_flow_graph => primitive!(1, function_control_flow_graph),
+            function_index => primitive!(1, function_index),
+            function_name => primitive!(1, function_name),
+            function_location_type => primitive!(1, function_location_type),
+            function_location_instruction => primitive!(2, function_location_instruction),
+            function_location_edge => primitive!(1, function_location_edge),
+            function_location_empty_block => primitive!(1, function_location_empty_block),
+            function_location_instruction_get => primitive!(2, function_location_instruction_get),
+            function_location_edge_get => primitive!(2, function_location_edge_get),
+            function_location_block_get => primitive!(2, function_location_block_get),
+            instruction_address => primitive!(1, instruction_address),
+            instruction_format => primitive!(1, instruction_format),
+            instruction_index => primitive!(1, instruction_index),
+            instruction_operation => primitive!(1, instruction_operation),
+            instruction_str => primitive!(1, instruction_str),
+            intrinsic_mnemonic => primitive!(1, intrinsic_mnemonic),
+            intrinsic_instruction_str => primitive!(1, intrinsic_instruction_str),
+            operation_format => primitive!(1, operation_format),
+            operation_assign => primitive!(2, operation_assign),
+            operation_store => primitive!(2, operation_store),
+            operation_load => primitive!(2, operation_load),
+            operation_branch => primitive!(1, operation_branch),
+            operation_type => primitive!(1, operation_type),
+            operation_assign_src => primitive!(1, operation_assign_src),
+            operation_assign_dst => primitive!(1, operation_assign_dst),
+            operation_store_index => primitive!(1, operation_store_index),
+            operation_store_src => primitive!(1, operation_store_src),
+            operation_load_dst => primitive!(1, operation_load_dst),
+            operation_load_index => primitive!(1, operation_load_index),
+            operation_branch_target => primitive!(1, operation_branch_target),
+            operation_intrinsic_intrinsic => primitive!(1, operation_intrinsic_intrinsic),
+            operation_str => primitive!(1, operation_str),
+            program_add_function => primitive!(2, program_add_function),
+            program_function_by_address => primitive!(2, program_function_by_address),
+            program_function_by_name => primitive!(2, program_function_by_name),
+            program_functions => primitive!(1, program_functions),
+            program_new => primitive!(1, program_new),
+            program_location_format => primitive!(1, program_location_format),
+            program_location_from_address => primitive!(2, program_location_from_address),
+            program_location_function_location => primitive!(1, program_location_function_location),
+            program_location_instruction => primitive!(2, program_location_instruction),
+            program_location_new => primitive!(2, program_location_new),
+            scalar_bits => primitive!(1, scalar_bits),
+            scalar_eq => primitive!(2, scalar_eq),
+            scalar_format => primitive!(1, scalar_format),
+            scalar_name => primitive!(1, scalar_name),
+            scalar_new => primitive!(2, scalar_new),
+            scalar_str => primitive!(1, scalar_str)
         })
     }
     

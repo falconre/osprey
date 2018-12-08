@@ -21,7 +21,7 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         -> gluon::vm::Result<gluon::vm::ExternModule> {
 
         gluon::vm::ExternModule::new(vm, record! {
-            architecture_endian => primitive!(1 architecture_endian)
+            architecture_endian => primitive!(1, architecture_endian)
         })
     }
     

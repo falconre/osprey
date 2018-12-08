@@ -49,10 +49,10 @@ pub fn bindings(vm: gluon::RootedThread) -> gluon::RootedThread {
         -> gluon::vm::Result<gluon::vm::ExternModule> {
         
         gluon::vm::ExternModule::new(vm, record! {
-            dead_code_elimination => primitive!(1 dead_code_elimination),
-            constants_analysis => primitive!(1 constants_analysis),
-            constants_eval => primitive!(2 constants_eval),
-            constants_scalar => primitive!(2 constants_scalar)
+            dead_code_elimination => primitive!(1, dead_code_elimination),
+            constants_analysis => primitive!(1, constants_analysis),
+            constants_eval => primitive!(2, constants_eval),
+            constants_scalar => primitive!(2, constants_scalar)
         })
     }
     

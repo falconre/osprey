@@ -59,11 +59,11 @@ pub fn bindings (vm: gluon::RootedThread) -> gluon::RootedThread {
         -> gluon::vm::Result<gluon::vm::ExternModule> {
         
         gluon::vm::ExternModule::new(vm, record! {
-            env => primitive!(1 env),
-            eval => primitive!(1 eval),
-            hex => primitive!(1 hex),
-            int_to_string => primitive!(1 int_to_string),
-            println => primitive!(1 println)
+            env => primitive!(1, env),
+            eval => primitive!(1, eval),
+            hex => primitive!(1, hex),
+            int_to_string => primitive!(1, int_to_string),
+            println => primitive!(1, println)
         })
     }
 
